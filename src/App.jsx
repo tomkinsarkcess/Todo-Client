@@ -18,6 +18,7 @@ const App = () => {
   const [editDueDate, setEditDueDate] = useState('');
   const [editPriority, setEditPriority] = useState('medium');
   const [showAddForm, setShowAddForm] = useState(true);
+  const API_URL = import.meta.env.VITE_API_URL || 'https://todo-server-mogodb.onrender.com';
   
   // Use ref to store the todo ID to delete
   const todoToDeleteRef = useRef(null);
@@ -114,7 +115,7 @@ const App = () => {
   
   const checkServerStatus = async () => {
     try {
-      const response = await fetch('https://todo-server-mogodb.onrender.com/todos');
+      const response = await fetch(`${API_URL}/todos`);
       if (response.ok) {
         setServerStatus('online');
       } else {
@@ -128,7 +129,7 @@ const App = () => {
   
   const fetchTodos = async () => {
     try {
-      const response = await fetch('https://todo-server-mogodb.onrender.com/todos');
+      const response = await fetch(`${API_URL}/todos`);
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
@@ -210,7 +211,7 @@ const App = () => {
     };
     
     try {
-      const response = await fetch('https://todo-server-mogodb.onrender.com/todos', {
+      const response = await fetch(`${API_URL}/todos`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -283,7 +284,7 @@ const App = () => {
     try {
       console.log(`Updating todo with ID: ${editId}`);
       
-      const response = await fetch(`https://todo-server-mogodb.onrender.com/todos${editId}`, {
+      const response = await fetch(`${API_URL}/todos)${editId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -395,7 +396,7 @@ const App = () => {
       
       console.log(`Converted ID: ${deleteId}, type: ${typeof deleteId}`);
       
-      const response = await fetch(`https://todo-server-mogodb.onrender.com/todos/${deleteId}`, {
+      const response = await fetch(`${API_URL}/todos)${deleteId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
