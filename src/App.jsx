@@ -284,7 +284,7 @@ const App = () => {
     try {
       console.log(`Updating todo with ID: ${editId}`);
       
-      const response = await fetch(`${API_URL}/todos)${editId}`, {
+      const response = await fetch(`${API_URL}/todos${editId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -396,7 +396,7 @@ const App = () => {
       
       console.log(`Converted ID: ${deleteId}, type: ${typeof deleteId}`);
       
-      const response = await fetch(`${API_URL}/todos)${deleteId}`, {
+      const response = await fetch(`${API_URL}/todos${deleteId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
