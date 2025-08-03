@@ -240,7 +240,7 @@ const App = () => {
       const formattedDate = now.toISOString().slice(0, 16);
       setDueDate(formattedDate);
       
-      // Show success message
+      // Show success message immediately
       showModal('success', 'Task added successfully!');
     } catch (error) {
       console.error('Error adding todo:', error);
@@ -321,7 +321,7 @@ const App = () => {
       setEditPriority('medium');
       setShowAddForm(true);
       
-      // Show success message
+      // Show success message immediately
       showModal('success', 'Task updated successfully!');
     } catch (error) {
       console.error('Error updating todo:', error);
@@ -421,7 +421,7 @@ const App = () => {
         saveTodosToLocalStorage(updatedTodos);
         closeModal();
         
-        // FIXED: Removed the artificial delay here
+        // FIXED: Removed the artificial delay here - show success message immediately
         showModal('success', 'Task deleted successfully!');
       } else if (response.status === 404) {
         console.log('Task not found, refreshing the list');
@@ -563,7 +563,7 @@ const App = () => {
     return new Date(dueDate) < new Date();
   };
   
-  // FIXED: Optimized modal state management to reduce delays
+  // FIXED: Optimized showModal function to reduce delays
   const showModal = (type, message = '') => {
     let content;
     
