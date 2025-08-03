@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
+// Main App Component
 const App = () => {
   const [todos, setTodos] = useState([]);
   const [newTask, setNewTask] = useState('');
@@ -19,21 +20,21 @@ const App = () => {
   const [editPriority, setEditPriority] = useState('medium');
   const [showAddForm, setShowAddForm] = useState(true);
   
-  // Feature 2: Animation states
+  // Animation states
   const [newTaskId, setNewTaskId] = useState(null);
   const [deletedTaskId, setDeletedTaskId] = useState(null);
   const [completedTaskId, setCompletedTaskId] = useState(null);
   
-  // Feature 3: Enhanced filter states
+  // Enhanced filter states
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [activeFilters, setActiveFilters] = useState([]);
   
-  // Feature 6: Keyboard shortcuts
+  // Keyboard shortcuts
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
   
-  // Feature 9: Task templates
+  // Task templates
   const [showTemplates, setShowTemplates] = useState(false);
   const taskTemplates = [
     { task: "Morning exercise", priority: "high", dueDateOffset: 1 },
@@ -43,51 +44,50 @@ const App = () => {
     { task: "Read a book", priority: "low", dueDateOffset: 3 }
   ];
   
+  // Collapsible sections
+  const [expandedSections, setExpandedSections] = useState({
+    overdue: true,
+    today: true,
+    tomorrow: true,
+    thisWeek: true,
+    later: true,
+    noDate: true
+  });
+  
   const API_URL = import.meta.env.VITE_API_URL || 'https://todo-server-mongodb.onrender.com';
   const todoToDeleteRef = useRef(null);
   
-  // Feature 6: Keyboard shortcuts
+  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Ignore if user is typing in an input field
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-        return;
-      }
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
       
-      // Ctrl/Cmd + K to focus search
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
         document.querySelector('input[placeholder="Search tasks..."]')?.focus();
       }
       
-      // 'n' to add new task
       if (e.key === 'n') {
         e.preventDefault();
-        if (!showAddForm) {
-          setShowAddForm(true);
-        }
+        if (!showAddForm) setShowAddForm(true);
         document.querySelector('input[placeholder="What needs to be done?"]')?.focus();
       }
       
-      // 'd' to toggle dark mode
       if (e.key === 'd') {
         e.preventDefault();
         toggleDarkMode();
       }
       
-      // '/' to open shortcuts help
       if (e.key === '/') {
         e.preventDefault();
         setShowShortcutsHelp(!showShortcutsHelp);
       }
       
-      // 't' to show templates
       if (e.key === 't') {
         e.preventDefault();
         setShowTemplates(!showTemplates);
       }
       
-      // 'f' to toggle advanced filters
       if (e.key === 'f') {
         e.preventDefault();
         setShowAdvancedFilters(!showAdvancedFilters);
@@ -98,13 +98,12 @@ const App = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showAddForm, showShortcutsHelp, showTemplates, showAdvancedFilters]);
   
-  // Check for dark mode preference in localStorage
+  // Dark mode
   useEffect(() => {
     const savedDarkMode = localStorage.getItem('darkMode') === 'true';
     setDarkMode(savedDarkMode);
   }, []);
   
-  // Save dark mode preference
   useEffect(() => {
     localStorage.setItem('darkMode', darkMode);
     if (darkMode) {
@@ -114,21 +113,21 @@ const App = () => {
     }
   }, [darkMode]);
   
-  // Set default due date to current date and time
+  // Set default due date
   useEffect(() => {
     const now = new Date();
     const formattedDate = now.toISOString().slice(0, 16);
     setDueDate(formattedDate);
   }, []);
   
-  // Request notification permission
+  // Notification permission
   useEffect(() => {
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission();
     }
   }, []);
   
-  // Set up reminders
+  // Reminders
   useEffect(() => {
     const checkReminders = () => {
       const now = new Date();
@@ -137,16 +136,13 @@ const App = () => {
           const dueDate = new Date(todo.dueDate);
           const timeDiff = dueDate.getTime() - now.getTime();
           
-          // If due date is within the next 10 minutes and not already notified
           if (timeDiff > 0 && timeDiff <= 600000 && !todo.notified) {
-            // Mark as notified
             const updatedTodos = todos.map(t => 
               t.id === todo.id ? { ...t, notified: true } : t
             );
             setTodos(updatedTodos);
             saveTodosToLocalStorage(updatedTodos);
             
-            // Show notification
             if (Notification.permission === 'granted') {
               new Notification('Task Due Soon', {
                 body: `"${capitalizeFirstWord(todo.task)}" is due in ${Math.floor(timeDiff / 60000)} minutes!`,
@@ -157,31 +153,11 @@ const App = () => {
         }
       });
     };
-    const reminderInterval = setInterval(checkReminders, 60000); // Check every minute
-    
+    const reminderInterval = setInterval(checkReminders, 60000);
     return () => clearInterval(reminderInterval);
   }, [todos]);
   
-  // Clean up localStorage todos (remove any without IDs)
-  const cleanLocalStorageTodos = () => {
-    const localTodos = localStorage.getItem('todos');
-    if (localTodos) {
-      try {
-        const parsedTodos = JSON.parse(localTodos);
-        const cleanedTodos = parsedTodos
-          .filter(todo => todo.id) // Remove todos without IDs
-          .map(todo => ({
-            ...todo,
-            id: todo.id || Date.now() // Ensure ID exists
-          }));
-        localStorage.setItem('todos', JSON.stringify(cleanedTodos));
-      } catch (error) {
-        console.error('Error cleaning localStorage todos:', error);
-      }
-    }
-  };
-  
-  // Fetch todos from the server when the component mounts
+  // Initialize
   useEffect(() => {
     cleanLocalStorageTodos();
     checkServerStatus();
@@ -209,15 +185,12 @@ const App = () => {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       const data = await response.json();
-      console.log('Fetched todos:', data);
       
-      // Try to get additional data from localStorage
       const localTodos = localStorage.getItem('todos');
       let mergedTodos = data;
       
       if (localTodos) {
         const parsedLocalTodos = JSON.parse(localTodos);
-        // Merge server data with local data (prioritize local data for additional fields)
         mergedTodos = data.map(serverTodo => {
           const localTodo = parsedLocalTodos.find(t => t.id === serverTodo.id);
           return localTodo || { 
@@ -229,7 +202,6 @@ const App = () => {
           };
         });
       } else {
-        // Initialize with default values
         mergedTodos = data.map(todo => ({
           ...todo,
           completed: false,
@@ -242,17 +214,33 @@ const App = () => {
       setTodos(mergedTodos);
     } catch (error) {
       console.error('Error fetching todos:', error);
-      // Try to get todos from localStorage as fallback
       const localTodos = localStorage.getItem('todos');
       if (localTodos) {
-        // Ensure all todos have IDs when loading from localStorage
         const parsedTodos = JSON.parse(localTodos).map(todo => ({
           ...todo,
-          id: todo.id || Date.now() // Ensure ID exists
+          id: todo.id || Date.now()
         }));
         setTodos(parsedTodos);
       }
       showModal('error', `Failed to fetch tasks: ${error.message}. Using local storage as fallback.`);
+    }
+  };
+  
+  const cleanLocalStorageTodos = () => {
+    const localTodos = localStorage.getItem('todos');
+    if (localTodos) {
+      try {
+        const parsedTodos = JSON.parse(localTodos);
+        const cleanedTodos = parsedTodos
+          .filter(todo => todo.id)
+          .map(todo => ({
+            ...todo,
+            id: todo.id || Date.now()
+          }));
+        localStorage.setItem('todos', JSON.stringify(cleanedTodos));
+      } catch (error) {
+        console.error('Error cleaning localStorage todos:', error);
+      }
     }
   };
   
@@ -269,14 +257,13 @@ const App = () => {
       showModal('validation', 'Please enter a valid task.');
       return;
     }
-    // Prevent task duplication
     if (todos.some(todo => todo.task.toLowerCase() === newTask.toLowerCase())) {
       showModal('validation', 'This task already exists. Please enter a unique task.');
       return;
     }
     
     const newTodo = {
-      id: Date.now(), // Temporary ID for the frontend
+      id: Date.now(),
       task: newTask,
       completed: false,
       dueDate: dueDate,
@@ -288,74 +275,55 @@ const App = () => {
     try {
       const response = await fetch(`${API_URL}/todos`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newTodo),
       });
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
       
       const savedTodo = await response.json();
-      console.log('Saved todo from server:', savedTodo);
-      
-      // Use the ID returned from the server
       const updatedTodos = [...todos, savedTodo];
       setTodos(updatedTodos);
       saveTodosToLocalStorage(updatedTodos);
       
-      // Feature 2: Animation for new task
       setNewTaskId(savedTodo.id);
       setTimeout(() => setNewTaskId(null), 1000);
       
-      // Reset form
       setNewTask('');
       setDueDate('');
       setPriority('medium');
       
-      // Reset due date to current time
       const now = new Date();
-      const formattedDate = now.toISOString().slice(0, 16);
-      setDueDate(formattedDate);
+      setDueDate(now.toISOString().slice(0, 16));
       
-      // Show success message
-      showModal('success', 'Task added successfully!');
+      // Removed success modal as requested
     } catch (error) {
       console.error('Error adding todo:', error);
-      // If server fails, save to local storage only
       const updatedTodos = [...todos, newTodo];
       setTodos(updatedTodos);
       saveTodosToLocalStorage(updatedTodos);
       
-      // Feature 2: Animation for new task
       setNewTaskId(newTodo.id);
       setTimeout(() => setNewTaskId(null), 1000);
       
-      // Reset form
       setNewTask('');
       setDueDate('');
       setPriority('medium');
       
-      // Reset due date to current time
       const now = new Date();
-      const formattedDate = now.toISOString().slice(0, 16);
-      setDueDate(formattedDate);
+      setDueDate(now.toISOString().slice(0, 16));
       
       showModal('error', `Failed to add task to server: ${error.message}. Saved locally only.`);
     }
   };
   
   const handleEdit = (todo) => {
-    console.log('Editing todo:', todo);
     setEditId(todo.id);
     setEditTask(todo.task);
     setEditDueDate(todo.dueDate || '');
     setEditPriority(todo.priority || 'medium');
     setShowAddForm(false);
     
-    // Smooth scroll to edit section
     setTimeout(() => {
       document.getElementById('edit-section')?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
@@ -368,13 +336,9 @@ const App = () => {
     }
     
     try {
-      console.log(`Updating todo with ID: ${editId}`);
-      
       const response = await fetch(`${API_URL}/todos/${editId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           task: editTask,
           dueDate: editDueDate,
@@ -383,13 +347,9 @@ const App = () => {
         }),
       });
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
       
       const updatedTodo = await response.json();
-      console.log('Received updated todo from server:', updatedTodo);
-      
       const updatedTodos = todos.map(todo => 
         todo.id === editId ? updatedTodo : todo
       );
@@ -397,19 +357,16 @@ const App = () => {
       setTodos(updatedTodos);
       saveTodosToLocalStorage(updatedTodos);
       
-      // Reset form
       setEditTask('');
       setEditId(null);
       setEditDueDate('');
       setEditPriority('medium');
       setShowAddForm(true);
       
-      // Show success message
-      showModal('success', 'Task updated successfully!');
+      // Removed success modal as requested
     } catch (error) {
       console.error('Error updating todo:', error);
       
-      // If server fails, update locally only
       const updatedTodos = todos.map(todo => 
         todo.id === editId 
           ? { ...todo, task: editTask, dueDate: editDueDate, priority: editPriority } 
@@ -418,7 +375,6 @@ const App = () => {
       setTodos(updatedTodos);
       saveTodosToLocalStorage(updatedTodos);
       
-      // Reset form
       setEditTask('');
       setEditId(null);
       setEditDueDate('');
@@ -430,10 +386,7 @@ const App = () => {
   };
   
   const handleDelete = (id) => {
-    console.log('handleDelete called with:', id, typeof id);
-    
     if (!id) {
-      console.error('Invalid todo ID:', id);
       showModal('error', 'Cannot delete task: Invalid task ID (undefined)');
       return;
     }
@@ -441,16 +394,13 @@ const App = () => {
     let actualId = id;
     if (typeof id === 'object' && id !== null) {
       actualId = id.id;
-      console.log('Extracted ID from object:', actualId);
     }
     
     if (!actualId) {
-      console.error('Invalid extracted ID:', actualId);
       showModal('error', 'Cannot delete task: Invalid task ID format');
       return;
     }
     
-    console.log('Setting todoToDelete to:', actualId);
     todoToDeleteRef.current = actualId;
     showModal('delete');
   };
@@ -460,7 +410,6 @@ const App = () => {
       let id = todoToDeleteRef.current;
       
       if (!id) {
-        console.error('No todo ID to delete');
         showModal('error', 'Cannot delete task: No task ID provided');
         closeModal();
         return;
@@ -468,107 +417,79 @@ const App = () => {
       
       if (typeof id === 'object' && id !== null) {
         id = id.id;
-        console.log('Extracted ID from object in confirmDelete:', id);
       }
-      
-      console.log(`Attempting to delete todo with ID: ${id}`);
-      console.log('ID type:', typeof id);
       
       const deleteId = typeof id === 'string' ? parseInt(id, 10) : id;
       
       if (isNaN(deleteId)) {
-        console.error('Invalid converted ID:', deleteId);
         showModal('error', 'Cannot delete task: Invalid task ID format');
         closeModal();
         return;
       }
       
-      console.log(`Converted ID: ${deleteId}, type: ${typeof deleteId}`);
-      
-      // Feature 2: Animation for deleted task
+      // Fixed: Set animation first, then delete after delay
       setDeletedTaskId(deleteId);
       
-      // Wait for animation to complete before actually deleting
       setTimeout(async () => {
-        const response = await fetch(`${API_URL}/todos/${deleteId}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        console.log(`Delete response status: ${response.status}`);
-        
-        if (response.ok) {
-          const updatedTodos = todos.filter(todo => {
-            const todoId = typeof todo.id === 'object' ? todo.id : todo.id;
-            return todoId !== id;
+        try {
+          const response = await fetch(`${API_URL}/todos/${deleteId}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
           });
+          
+          if (response.ok) {
+            const updatedTodos = todos.filter(todo => todo.id !== id);
+            setTodos(updatedTodos);
+            saveTodosToLocalStorage(updatedTodos);
+            closeModal();
+            setDeletedTaskId(null);
+          } else if (response.status === 404) {
+            await fetchTodos();
+            closeModal();
+            setDeletedTaskId(null);
+            showModal('info', 'This task may have been already deleted. The task list has been refreshed.');
+          } else {
+            let errorMessage = `Server error (${response.status})`;
+            try {
+              const errorText = await response.text();
+              try {
+                const errorJson = JSON.parse(errorText);
+                if (errorJson.message) errorMessage += `: ${errorJson.message}`;
+                else if (errorJson.error) errorMessage += `: ${errorJson.error}`;
+              } catch (e) {
+                if (errorText.length < 100) errorMessage += `: ${errorText}`;
+              }
+            } catch (e) {
+              console.error('Error reading error response:', e);
+            }
+            throw new Error(errorMessage);
+          }
+        } catch (error) {
+          console.error('Error deleting todo:', error);
+          const id = todoToDeleteRef.current;
+          const updatedTodos = todos.filter(todo => todo.id !== id);
           setTodos(updatedTodos);
           saveTodosToLocalStorage(updatedTodos);
           closeModal();
           setDeletedTaskId(null);
           
-          showModal('success', 'Task deleted successfully!');
-        } else if (response.status === 404) {
-          console.log('Task not found, refreshing the list');
-          await fetchTodos();
-          closeModal();
-          setDeletedTaskId(null);
-          showModal('info', 'This task may have been already deleted. The task list has been refreshed.');
-        } else {
-          // Handle server errors (5xx) with more detailed information
-          let errorMessage = `Server error (${response.status})`;
-          try {
-            const errorText = await response.text();
-            console.error(`Delete failed with status ${response.status}: ${errorText}`);
-            // Try to parse as JSON for more detailed error
-            try {
-              const errorJson = JSON.parse(errorText);
-              if (errorJson.message) {
-                errorMessage += `: ${errorJson.message}`;
-              } else if (errorJson.error) {
-                errorMessage += `: ${errorJson.error}`;
-              }
-            } catch (e) {
-              // If not JSON, use the raw text if it's not too long
-              if (errorText.length < 100) {
-                errorMessage += `: ${errorText}`;
-              }
-            }
-          } catch (e) {
-            console.error('Error reading error response:', e);
-          }
+          let userMessage = 'Failed to delete task on server.';
+          if (error.message.includes('500')) userMessage += ' The server encountered an internal error.';
+          else if (error.message.includes('404')) userMessage += ' The task was not found on the server.';
+          else userMessage += ` ${error.message}`;
           
-          throw new Error(errorMessage);
+          showModal('error', `${userMessage} Deleted locally only.`);
         }
-      }, 300); // Match animation duration
+      }, 300);
     } catch (error) {
-      console.error('Error deleting todo:', error);
-      // If server fails, delete locally only
-      const id = todoToDeleteRef.current;
-      const updatedTodos = todos.filter(todo => todo.id !== id);
-      setTodos(updatedTodos);
-      saveTodosToLocalStorage(updatedTodos);
+      console.error('Error in confirmDelete:', error);
       closeModal();
       setDeletedTaskId(null);
-      
-      // Show a more user-friendly error message
-      let userMessage = 'Failed to delete task on server.';
-      if (error.message.includes('500')) {
-        userMessage += ' The server encountered an internal error.';
-      } else if (error.message.includes('404')) {
-        userMessage += ' The task was not found on the server.';
-      } else {
-        userMessage += ` ${error.message}`;
-      }
-      
-      showModal('error', `${userMessage} Deleted locally only.`);
+      showModal('error', 'An unexpected error occurred while deleting the task.');
     }
   };
   
   const toggleTaskCompletion = (id) => {
-    // Feature 2: Animation for completed task
     setCompletedTaskId(id);
     setTimeout(() => setCompletedTaskId(null), 1000);
     
@@ -591,23 +512,19 @@ const App = () => {
     setDarkMode(!darkMode);
   };
   
-  // Feature 3: Enhanced filtering
   const applyAdvancedFilters = (todos) => {
     let filtered = todos;
     
-    // Apply basic filter
     if (filter === 'active') {
       filtered = filtered.filter(todo => !todo.completed);
     } else if (filter === 'completed') {
       filtered = filtered.filter(todo => todo.completed);
     }
     
-    // Apply priority filter
     if (priorityFilter !== 'all') {
       filtered = filtered.filter(todo => todo.priority === priorityFilter);
     }
     
-    // Apply date filter
     if (dateFilter !== 'all') {
       const now = new Date();
       now.setHours(0, 0, 0, 0);
@@ -645,7 +562,6 @@ const App = () => {
       }
     }
     
-    // Apply search term
     if (searchTerm) {
       filtered = filtered.filter(todo => 
         todo.task.toLowerCase().includes(searchTerm.toLowerCase())
@@ -655,7 +571,6 @@ const App = () => {
     return filtered;
   };
   
-  // Feature 3: Update active filters
   useEffect(() => {
     const filters = [];
     
@@ -684,7 +599,6 @@ const App = () => {
     setActiveFilters(filters);
   }, [filter, priorityFilter, dateFilter, searchTerm]);
   
-  // Feature 3: Clear all filters
   const clearAllFilters = () => {
     setFilter('all');
     setPriorityFilter('all');
@@ -692,30 +606,20 @@ const App = () => {
     setSearchTerm('');
   };
   
-  // Feature 3: Remove specific filter
   const removeFilter = (filterType) => {
-    if (filterType === 'status') {
-      setFilter('all');
-    } else if (filterType === 'priority') {
-      setPriorityFilter('all');
-    } else if (filterType === 'date') {
-      setDateFilter('all');
-    } else if (filterType === 'search') {
-      setSearchTerm('');
-    }
+    if (filterType === 'status') setFilter('all');
+    else if (filterType === 'priority') setPriorityFilter('all');
+    else if (filterType === 'date') setDateFilter('all');
+    else if (filterType === 'search') setSearchTerm('');
   };
   
-  // Filter todos based on search term and filter
   const filteredTodos = applyAdvancedFilters(todos);
   
-  // Sort todos by priority and due date
   const sortedTodos = [...filteredTodos].sort((a, b) => {
-    // First by priority (high > medium > low)
     const priorityOrder = { high: 3, medium: 2, low: 1 };
     if (priorityOrder[a.priority] > priorityOrder[b.priority]) return -1;
     if (priorityOrder[a.priority] < priorityOrder[b.priority]) return 1;
     
-    // Then by due date (earliest first)
     if (a.dueDate && b.dueDate) {
       return new Date(a.dueDate) - new Date(b.dueDate);
     }
@@ -764,7 +668,6 @@ const App = () => {
     return new Date(dueDate) < new Date();
   };
   
-  // Feature 9: Apply task template
   const applyTemplate = (template) => {
     const now = new Date();
     const dueDate = new Date(now);
@@ -776,13 +679,11 @@ const App = () => {
     setDueDate(formattedDate);
     setShowTemplates(false);
     
-    // Focus on the task input
     setTimeout(() => {
       document.querySelector('input[placeholder="What needs to be done?"]')?.focus();
     }, 100);
   };
   
-  // Feature 1: Progress visualization
   const calculateProgress = () => {
     if (todos.length === 0) return 0;
     const completedCount = todos.filter(todo => todo.completed).length;
@@ -791,7 +692,6 @@ const App = () => {
   
   const progressPercentage = calculateProgress();
   
-  // Feature 5: Collapsible sections
   const groupTasksByDate = (tasks) => {
     const groups = {
       overdue: [],
@@ -834,15 +734,6 @@ const App = () => {
     
     return groups;
   };
-  
-  const [expandedSections, setExpandedSections] = useState({
-    overdue: true,
-    today: true,
-    tomorrow: true,
-    thisWeek: true,
-    later: true,
-    noDate: true
-  });
   
   const toggleSection = (section) => {
     setExpandedSections(prev => ({
@@ -940,7 +831,677 @@ const App = () => {
     }, 300);
   };
   
-  // Modal component with refined transitions
+  // Component functions
+  const renderTaskItem = (todo) => {
+    const isNew = newTaskId === todo.id;
+    const isDeleted = deletedTaskId === todo.id;
+    const isCompleted = completedTaskId === todo.id;
+    
+    let animationClass = '';
+    if (isNew) animationClass = 'animate-slide-in';
+    if (isDeleted) animationClass = 'animate-fade-out';
+    if (isCompleted) animationClass = 'animate-check';
+    
+    return (
+      <li 
+        key={todo.id} 
+        className={`task-item flex flex-col p-4 rounded-xl shadow-sm transition-all duration-300 ${
+          editId === todo.id 
+            ? (darkMode 
+              ? 'bg-gray-700 border-l-4 border-indigo-500 transform scale-[1.02]' 
+              : 'bg-indigo-50 border-l-4 border-indigo-500 transform scale-[1.02]')
+            : (darkMode 
+              ? 'bg-gray-700 hover:bg-gray-600' 
+              : 'bg-white border border-gray-200 hover:bg-gray-50 hover:shadow-md')
+        } ${animationClass}`}
+        style={isDeleted ? { height: 0, padding: 0, margin: 0, opacity: 0 } : {}}
+      >
+        <div className="flex justify-between items-start">
+          <div className="flex items-start">
+            <button
+              onClick={() => toggleTaskCompletion(todo.id)}
+              className={`mr-3 flex items-center justify-center w-6 h-6 rounded-full border-2 transition-all duration-300 mt-1 ${
+                todo.completed 
+                  ? (darkMode ? 'bg-green-500 border-green-500' : 'bg-green-500 border-green-500')
+                  : (darkMode ? 'border-gray-400 hover:border-gray-300' : 'border-gray-300 hover:border-gray-400')
+              }`}
+              aria-label={todo.completed ? 'Mark as incomplete' : 'Mark as complete'}
+            >
+              {todo.completed && (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              )}
+            </button>
+            <div className="flex-1 min-w-0">
+              <span className={`font-medium transition-colors duration-300 break-words ${
+                todo.completed 
+                  ? (darkMode ? 'text-gray-400 line-through' : 'text-gray-400 line-through')
+                  : (darkMode ? 'text-white' : 'text-gray-800')
+              }`}>
+                {searchTerm && todo.task.toLowerCase().includes(searchTerm.toLowerCase()) ? (
+                  <>
+                    {todo.task.split(new RegExp(`(${searchTerm})`, 'gi')).map((part, index) => 
+                      part.toLowerCase() === searchTerm.toLowerCase() ? (
+                        <mark key={index} className="bg-yellow-300 text-gray-900 dark:bg-yellow-500 dark:text-gray-900">
+                          {part}
+                        </mark>
+                      ) : (
+                        part
+                      )
+                    )}
+                  </>
+                ) : (
+                  capitalizeFirstWord(todo.task)
+                )}
+              </span>
+              
+              <div className="flex flex-wrap items-center mt-2 gap-2">
+                {todo.dueDate && (
+                  <div className={`flex items-center text-xs ${
+                    isOverdue(todo.dueDate) && !todo.completed
+                      ? 'text-red-500 font-medium'
+                      : (darkMode ? 'text-gray-400' : 'text-gray-500')
+                  }`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                    </svg>
+                    <span className="truncate max-w-[120px] sm:max-w-xs">{formatDate(todo.dueDate)}</span>
+                    {isOverdue(todo.dueDate) && !todo.completed && (
+                      <span className="ml-1">• Overdue</span>
+                    )}
+                  </div>
+                )}
+                
+                <div className="flex items-center">
+                  <span className={`inline-block w-2 h-2 rounded-full mr-1 ${getPriorityColor(todo.priority)}`}></span>
+                  <span className={`text-xs ${
+                    darkMode ? 'text-gray-400' : 'text-gray-500'
+                  }`}>
+                    {getPriorityLabel(todo.priority)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex space-x-2 flex-shrink-0">
+            <button
+              onClick={() => handleEdit(todo)}
+              className={`p-2 rounded-lg transition-all duration-300 transform hover:scale-110 ${
+                darkMode 
+                  ? 'bg-yellow-900 text-yellow-300 hover:bg-yellow-800' 
+                  : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+              }`}
+              aria-label="Edit task"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+              </svg>
+            </button>
+            <button
+              onClick={() => handleDelete(todo.id)}
+              className={`p-2 rounded-lg transition-all duration-300 transform hover:scale-110 ${
+                darkMode 
+                  ? 'bg-red-900 text-red-300 hover:bg-red-800' 
+                  : 'bg-red-100 text-red-700 hover:bg-red-200'
+              }`}
+              aria-label="Delete task"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </li>
+    );
+  };
+  
+  // Components
+  const Header = () => (
+    <div className="flex justify-between items-center mb-6">
+      <div>
+        <h1 className="text-2xl md:text-3xl font-bold mb-1 transition-colors duration-300">
+          {darkMode ? 'Todo App' : 'Todo App'}
+        </h1>
+        <p className={`text-xs md:text-sm transition-colors duration-300 ${
+          darkMode ? 'text-gray-400' : 'text-gray-600'
+        }`}>
+          Stay organized and productive
+        </p>
+      </div>
+      <button
+        onClick={toggleDarkMode}
+        className={`p-2 md:p-3 rounded-full transition-all duration-300 transform hover:scale-110 ${
+          darkMode 
+            ? 'bg-yellow-400 text-gray-900' 
+            : 'bg-indigo-600 text-white'
+        }`}
+        aria-label="Toggle dark mode"
+      >
+        {darkMode ? (
+          // Fixed dark mode icon
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
+          </svg>
+        ) : (
+          // Fixed light mode icon
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+          </svg>
+        )}
+      </button>
+    </div>
+  );
+  
+  const ServerStatus = () => (
+    <div className="flex items-center justify-center mb-4">
+      <div className={`h-3 w-3 rounded-full mr-2 ${
+        serverStatus === 'online' ? 'bg-green-500' : 
+        serverStatus === 'offline' ? 'bg-red-500' : 'bg-yellow-500'
+      }`}></div>
+      <span className={`text-xs ${
+        darkMode ? 'text-gray-400' : 'text-gray-500'
+      }`}>
+        {serverStatus === 'online' ? 'Server Online' : 
+         serverStatus === 'offline' ? 'Server Offline' : 'Checking Server...'}
+      </span>
+    </div>
+  );
+  
+  const ProgressBar = () => {
+    const progressPercentage = calculateProgress();
+    
+    return (
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-2">
+          <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+            Progress
+          </span>
+          <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+            {progressPercentage}%
+          </span>
+        </div>
+        <div className={`w-full h-3 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
+          <div 
+            className="h-full bg-indigo-600 rounded-full transition-all duration-500 ease-out"
+            style={{ width: `${progressPercentage}%` }}
+          ></div>
+        </div>
+        <div className="flex justify-between mt-1">
+          <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            {todos.filter(todo => !todo.completed).length} active
+          </span>
+          <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            {todos.length} total
+          </span>
+        </div>
+      </div>
+    );
+  };
+  
+  const SearchAndFilters = () => {
+    return (
+      <div className="mb-6 space-y-3">
+        <div className="relative">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className={`w-full p-3 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
+              darkMode 
+                ? 'bg-gray-700 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
+                : 'border border-gray-300 text-gray-900 focus:ring-indigo-500 focus:border-transparent'
+            }`}
+            placeholder="Search tasks..."
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </button>
+          )}
+        </div>
+        
+        {activeFilters.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-3">
+            {activeFilters.map((filter, index) => (
+              <div 
+                key={index} 
+                className={`flex items-center px-3 py-1 rounded-full text-sm ${
+                  darkMode ? 'bg-indigo-900 text-indigo-200' : 'bg-indigo-100 text-indigo-800'
+                }`}
+              >
+                <span>{filter.label}</span>
+                <button 
+                  onClick={() => removeFilter(filter.type)}
+                  className="ml-2 text-current hover:text-gray-700 dark:hover:text-gray-300"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+            <button 
+              onClick={clearAllFilters}
+              className={`text-sm px-3 py-1 rounded-full ${
+                darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Clear all
+            </button>
+          </div>
+        )}
+        
+        <div className="flex space-x-2">
+          <button
+            onClick={() => setFilter('all')}
+            className={`flex-1 py-2 rounded-lg font-medium transition-all duration-300 ${
+              filter === 'all' 
+                ? (darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white')
+                : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
+            }`}
+          >
+            All
+          </button>
+          <button
+            onClick={() => setFilter('active')}
+            className={`flex-1 py-2 rounded-lg font-medium transition-all duration-300 ${
+              filter === 'active' 
+                ? (darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white')
+                : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
+            }`}
+          >
+            Active
+          </button>
+          <button
+            onClick={() => setFilter('completed')}
+            className={`flex-1 py-2 rounded-lg font-medium transition-all duration-300 ${
+              filter === 'completed' 
+                ? (darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white')
+                : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
+            }`}
+          >
+            Completed
+          </button>
+        </div>
+        
+        <button
+          onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+          className={`w-full py-2 rounded-lg font-medium transition-all duration-300 flex items-center justify-center ${
+            darkMode 
+              ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-1 transition-transform duration-300 ${showAdvancedFilters ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+          </svg>
+          Advanced Filters
+        </button>
+        
+        {showAdvancedFilters && (
+          <div className="space-y-3 p-3 rounded-lg border border-gray-300 dark:border-gray-600 transition-all duration-300">
+            <div>
+              <label className={`block text-sm font-medium mb-1 ${
+                darkMode ? 'text-gray-300' : 'text-gray-700'
+              }`}>
+                Priority
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {['high', 'medium', 'low'].map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setPriorityFilter(priorityFilter === p ? 'all' : p)}
+                    className={`py-2 rounded-lg font-medium transition-all duration-300 ${
+                      priorityFilter === p 
+                        ? (darkMode ? `bg-${p === 'high' ? 'red' : p === 'medium' ? 'yellow' : 'green'}-600 text-white` : `bg-${p === 'high' ? 'red' : p === 'medium' ? 'yellow' : 'green'}-600 text-white`)
+                        : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
+                    }`}
+                  >
+                    {p.charAt(0).toUpperCase() + p.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <div>
+              <label className={`block text-sm font-medium mb-1 ${
+                darkMode ? 'text-gray-300' : 'text-gray-700'
+              }`}>
+                Due Date
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {['today', 'tomorrow', 'thisWeek', 'overdue'].map((d) => {
+                  const label = d === 'today' ? 'Today' : 
+                               d === 'tomorrow' ? 'Tomorrow' : 
+                               d === 'thisWeek' ? 'This Week' : 'Overdue';
+                  return (
+                    <button
+                      key={d}
+                      onClick={() => setDateFilter(dateFilter === d ? 'all' : d)}
+                      className={`py-2 rounded-lg font-medium transition-all duration-300 ${
+                        dateFilter === d 
+                          ? (darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white')
+                          : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+  
+  const TaskTemplatesButton = () => (
+    <div className="mb-6">
+      <button
+        onClick={() => setShowTemplates(true)}
+        className={`w-full py-2 rounded-lg font-medium transition-all duration-300 flex items-center justify-center ${
+          darkMode 
+            ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+        }`}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M5 4a1 1 0 00-2 0v7.268a2 2 0 000 3.464V16a1 1 0 102 0v-1.268a2 2 0 000-3.464V4zM11 4a1 1 0 10-2 0v1.268a2 2 0 000 3.464V16a1 1 0 102 0V8.732a2 2 0 000-3.464V4zM16 3a1 1 0 011 1v7.268a2 2 0 010 3.464V16a1 1 0 11-2 0v-1.268a2 2 0 010-3.464V4a1 1 0 011-1z" />
+        </svg>
+        Use Task Template
+      </button>
+    </div>
+  );
+  
+  const AddTaskForm = () => (
+    showAddForm && (
+      <div className="mb-6 p-4 rounded-xl transition-all duration-300 ${
+        darkMode ? 'bg-gray-700' : 'bg-indigo-50'
+      }">
+        <h3 className={`font-medium mb-3 ${
+          darkMode ? 'text-indigo-300' : 'text-indigo-800'
+        }`}>
+          Add New Task
+        </h3>
+        <div className="space-y-3">
+          <input
+            type="text"
+            value={newTask}
+            onChange={(e) => setNewTask(e.target.value)}
+            className={`w-full p-3 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
+              darkMode 
+                ? 'bg-gray-800 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
+                : 'border border-gray-300 text-gray-900 focus:ring-indigo-500 focus:border-transparent'
+            }`}
+            placeholder="What needs to be done?"
+            onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+          />
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className={`block text-sm font-medium mb-1 ${
+                darkMode ? 'text-gray-300' : 'text-gray-700'
+              }`}>
+                Due Date
+              </label>
+              <input
+                type="datetime-local"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                className={`w-full p-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
+                  darkMode 
+                    ? 'bg-gray-800 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
+                    : 'border border-gray-300 text-gray-900 focus:ring-indigo-500 focus:border-transparent'
+                }`}
+              />
+            </div>
+            
+            <div>
+              <label className={`block text-sm font-medium mb-1 ${
+                darkMode ? 'text-gray-300' : 'text-gray-700'
+              }`}>
+                Priority
+              </label>
+              {/* Fixed radio buttons for priority */}
+              <div className="flex space-x-4">
+                {['high', 'medium', 'low'].map((p) => (
+                  <label key={p} className="flex items-center">
+                    <input
+                      type="radio"
+                      name="priority"
+                      value={p}
+                      checked={priority === p}
+                      onChange={() => setPriority(p)}
+                      className="sr-only"
+                    />
+                    <div 
+                      onClick={() => setPriority(p)}
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center cursor-pointer transition-colors duration-200 ${
+                        priority === p 
+                          ? (p === 'high' ? 'border-red-500 bg-red-500' : 
+                             p === 'medium' ? 'border-yellow-500 bg-yellow-500' : 
+                             'border-green-500 bg-green-500')
+                          : (darkMode ? 'border-gray-400' : 'border-gray-300')
+                      }`}
+                    >
+                      {priority === p && (
+                        <div className="w-2 h-2 rounded-full bg-white"></div>
+                      )}
+                    </div>
+                    <span className="ml-1 text-sm capitalize">{p}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          <button
+            onClick={handleAdd}
+            className="w-full bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition-all duration-300 flex items-center justify-center transform hover:scale-105"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+            </svg>
+            Add Task
+          </button>
+        </div>
+      </div>
+    )
+  );
+  
+  const EditTaskForm = () => (
+    editId && (
+      <div 
+        id="edit-section"
+        className={`mb-6 p-4 rounded-xl border-l-4 transition-all duration-500 ${
+          darkMode 
+            ? 'bg-gray-700 border-indigo-500' 
+            : 'bg-indigo-50 border-indigo-500'
+        } ${
+          editId ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+        }`}
+      >
+        <h3 className={`font-medium mb-3 flex items-center ${
+          darkMode ? 'text-indigo-300' : 'text-indigo-800'
+        }`}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+          </svg>
+          Editing Task
+        </h3>
+        <div className="space-y-3">
+          <input
+            type="text"
+            value={editTask}
+            onChange={(e) => setEditTask(e.target.value)}
+            className={`w-full p-3 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
+              darkMode 
+                ? 'bg-gray-800 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
+                : 'border border-indigo-300 text-gray-900 focus:ring-indigo-500 focus:border-transparent bg-white'
+            }`}
+            placeholder="Edit your task"
+            autoFocus
+            onKeyDown={(e) => e.key === 'Enter' && handleUpdate()}
+          />
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className={`block text-sm font-medium mb-1 ${
+                darkMode ? 'text-gray-300' : 'text-gray-700'
+              }`}>
+                Due Date
+              </label>
+              <input
+                type="datetime-local"
+                value={editDueDate}
+                onChange={(e) => setEditDueDate(e.target.value)}
+                className={`w-full p-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
+                  darkMode 
+                    ? 'bg-gray-800 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
+                    : 'border border-indigo-300 text-gray-900 focus:ring-indigo-500 focus:border-transparent bg-white'
+                }`}
+              />
+            </div>
+            
+            <div>
+              <label className={`block text-sm font-medium mb-1 ${
+                darkMode ? 'text-gray-300' : 'text-gray-700'
+              }`}>
+                Priority
+              </label>
+              {/* Fixed radio buttons for edit priority */}
+              <div className="flex space-x-4">
+                {['high', 'medium', 'low'].map((p) => (
+                  <label key={p} className="flex items-center">
+                    <input
+                      type="radio"
+                      name="editPriority"
+                      value={p}
+                      checked={editPriority === p}
+                      onChange={() => setEditPriority(p)}
+                      className="sr-only"
+                    />
+                    <div 
+                      onClick={() => setEditPriority(p)}
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center cursor-pointer transition-colors duration-200 ${
+                        editPriority === p 
+                          ? (p === 'high' ? 'border-red-500 bg-red-500' : 
+                             p === 'medium' ? 'border-yellow-500 bg-yellow-500' : 
+                             'border-green-500 bg-green-500')
+                          : (darkMode ? 'border-gray-400' : 'border-gray-300')
+                      }`}
+                    >
+                      {editPriority === p && (
+                        <div className="w-2 h-2 rounded-full bg-white"></div>
+                      )}
+                    </div>
+                    <span className="ml-1 text-sm capitalize">{p}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex space-x-3">
+            <button
+              onClick={handleUpdate}
+              className="flex-1 bg-green-600 text-white py-2.5 rounded-lg hover:bg-green-700 transition-all duration-300 font-medium transform hover:scale-[1.02]"
+            >
+              Save Changes
+            </button>
+            <button
+              onClick={cancelEdit}
+              className="flex-1 bg-gray-500 text-white py-2.5 rounded-lg hover:bg-gray-600 transition-all duration-300 font-medium transform hover:scale-[1.02]"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  );
+  
+  const TaskList = () => {
+    const taskGroups = groupTasksByDate(sortedTodos);
+    
+    return (
+      <div className="space-y-3 max-h-96 overflow-y-auto pr-2 transition-all duration-300">
+        {sortedTodos.length === 0 ? (
+          <div className="text-center py-8 transition-all duration-500">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            <p className={darkMode ? 'text-gray-400' : 'text-gray-500'}>
+              {searchTerm || filter !== 'all' || priorityFilter !== 'all' || dateFilter !== 'all' 
+                ? 'No tasks match your search or filter.' 
+                : 'No tasks yet. Add a task to get started!'}
+            </p>
+            {serverStatus === 'offline' && (
+              <p className="text-red-500 mt-2 text-sm">Server is offline. Please start the server to sync tasks.</p>
+            )}
+          </div>
+        ) : (
+          <>
+            {Object.entries(taskGroups).map(([sectionName, tasks]) => {
+              if (tasks.length === 0) return null;
+              
+              const sectionTitle = sectionName === 'overdue' ? 'Overdue' :
+                                 sectionName === 'today' ? 'Today' :
+                                 sectionName === 'tomorrow' ? 'Tomorrow' :
+                                 sectionName === 'thisWeek' ? 'This Week' :
+                                 sectionName === 'later' ? 'Later' : 'No Date';
+              
+              const isOverdueSection = sectionName === 'overdue';
+              const sectionColor = isOverdueSection ? 'text-red-500' : 'text-gray-700 dark:text-gray-300';
+              
+              return (
+                <div key={sectionName} className="mb-4">
+                  <button 
+                    onClick={() => toggleSection(sectionName)}
+                    className="flex items-center w-full p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-2 transition-transform duration-300 ${expandedSections[sectionName] ? 'rotate-90' : ''}`} viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                    </svg>
+                    <span className={`font-medium ${sectionColor}`}>{sectionTitle} ({tasks.length})</span>
+                  </button>
+                  
+                  {expandedSections[sectionName] && (
+                    <div className="mt-2 space-y-3 pl-7">
+                      {tasks.map(todo => renderTaskItem(todo))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </>
+        )}
+      </div>
+    );
+  };
+  
+  const KeyboardShortcutsHint = () => (
+    <div className="mt-4 text-center">
+      <button
+        onClick={() => setShowShortcutsHelp(true)}
+        className={`text-sm ${
+          darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
+        }`}
+      >
+        Press / for keyboard shortcuts
+      </button>
+    </div>
+  );
+  
   const Modal = () => {
     if (!isModalOpen || !modalContent) return null;
     return createPortal(
@@ -983,7 +1544,6 @@ const App = () => {
     );
   };
   
-  // Feature 6: Keyboard Shortcuts Help Modal
   const ShortcutsHelpModal = () => {
     if (!showShortcutsHelp) return null;
     
@@ -1039,7 +1599,6 @@ const App = () => {
     );
   };
   
-  // Feature 9: Task Templates Modal
   const TemplatesModal = () => {
     if (!showTemplates) return null;
     
@@ -1103,626 +1662,15 @@ const App = () => {
           ? 'bg-gray-800 shadow-2xl rounded-2xl p-4 md:p-6' 
           : 'bg-white shadow-2xl rounded-2xl p-4 md:p-6'
       }`}>
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold mb-1 transition-colors duration-300">
-              {darkMode ? 'Todo App' : 'Todo App'}
-            </h1>
-            <p className={`text-xs md:text-sm transition-colors duration-300 ${
-              darkMode ? 'text-gray-400' : 'text-gray-600'
-            }`}>
-              Stay organized and productive
-            </p>
-          </div>
-          <button
-            onClick={toggleDarkMode}
-            className={`p-2 md:p-3 rounded-full transition-all duration-300 transform hover:scale-110 ${
-              darkMode 
-                ? 'bg-yellow-400 text-gray-900' 
-                : 'bg-indigo-600 text-white'
-            }`}
-            aria-label="Toggle dark mode"
-          >
-            {darkMode ? (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
-              </svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-              </svg>
-            )}
-          </button>
-        </div>
-        
-        <div className="flex items-center justify-center mb-4">
-          <div className={`h-3 w-3 rounded-full mr-2 ${
-            serverStatus === 'online' ? 'bg-green-500' : 
-            serverStatus === 'offline' ? 'bg-red-500' : 'bg-yellow-500'
-          }`}></div>
-          <span className={`text-xs ${
-            darkMode ? 'text-gray-400' : 'text-gray-500'
-          }`}>
-            {serverStatus === 'online' ? 'Server Online' : 
-             serverStatus === 'offline' ? 'Server Offline' : 'Checking Server...'}
-          </span>
-        </div>
-        
-        {/* Feature 1: Progress Visualization */}
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-2">
-            <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-              Progress
-            </span>
-            <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-              {progressPercentage}%
-            </span>
-          </div>
-          <div className={`w-full h-3 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
-            <div 
-              className="h-full bg-indigo-600 rounded-full transition-all duration-500 ease-out"
-              style={{ width: `${progressPercentage}%` }}
-            ></div>
-          </div>
-          <div className="flex justify-between mt-1">
-            <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              {todos.filter(todo => !todo.completed).length} active
-            </span>
-            <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              {todos.length} total
-            </span>
-          </div>
-        </div>
-        
-        {/* Feature 3: Enhanced Search and Filters */}
-        <div className="mb-6 space-y-3">
-          <div className="relative">
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className={`w-full p-3 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
-                darkMode 
-                  ? 'bg-gray-700 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
-                  : 'border border-gray-300 text-gray-900 focus:ring-indigo-500 focus:border-transparent'
-              }`}
-              placeholder="Search tasks..."
-            />
-            {searchTerm && (
-              <button
-                onClick={() => setSearchTerm('')}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-              </button>
-            )}
-          </div>
-          
-          {/* Active Filters */}
-          {activeFilters.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-3">
-              {activeFilters.map((filter, index) => (
-                <div 
-                  key={index} 
-                  className={`flex items-center px-3 py-1 rounded-full text-sm ${
-                    darkMode ? 'bg-indigo-900 text-indigo-200' : 'bg-indigo-100 text-indigo-800'
-                  }`}
-                >
-                  <span>{filter.label}</span>
-                  <button 
-                    onClick={() => removeFilter(filter.type)}
-                    className="ml-2 text-current hover:text-gray-700 dark:hover:text-gray-300"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                </div>
-              ))}
-              <button 
-                onClick={clearAllFilters}
-                className={`text-sm px-3 py-1 rounded-full ${
-                  darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Clear all
-              </button>
-            </div>
-          )}
-          
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setFilter('all')}
-              className={`flex-1 py-2 rounded-lg font-medium transition-all duration-300 ${
-                filter === 'all' 
-                  ? (darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white')
-                  : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setFilter('active')}
-              className={`flex-1 py-2 rounded-lg font-medium transition-all duration-300 ${
-                filter === 'active' 
-                  ? (darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white')
-                  : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
-              }`}
-            >
-              Active
-            </button>
-            <button
-              onClick={() => setFilter('completed')}
-              className={`flex-1 py-2 rounded-lg font-medium transition-all duration-300 ${
-                filter === 'completed' 
-                  ? (darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white')
-                  : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
-              }`}
-            >
-              Completed
-            </button>
-          </div>
-          
-          {/* Advanced Filters Toggle */}
-          <button
-            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-            className={`w-full py-2 rounded-lg font-medium transition-all duration-300 flex items-center justify-center ${
-              darkMode 
-                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-1 transition-transform duration-300 ${showAdvancedFilters ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-            Advanced Filters
-          </button>
-          
-          {/* Advanced Filters */}
-          {showAdvancedFilters && (
-            <div className="space-y-3 p-3 rounded-lg border border-gray-300 dark:border-gray-600 transition-all duration-300">
-              <div>
-                <label className={`block text-sm font-medium mb-1 ${
-                  darkMode ? 'text-gray-300' : 'text-gray-700'
-                }`}>
-                  Priority
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    onClick={() => setPriorityFilter(priorityFilter === 'high' ? 'all' : 'high')}
-                    className={`py-2 rounded-lg font-medium transition-all duration-300 ${
-                      priorityFilter === 'high' 
-                        ? (darkMode ? 'bg-red-600 text-white' : 'bg-red-600 text-white')
-                        : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
-                    }`}
-                  >
-                    High
-                  </button>
-                  <button
-                    onClick={() => setPriorityFilter(priorityFilter === 'medium' ? 'all' : 'medium')}
-                    className={`py-2 rounded-lg font-medium transition-all duration-300 ${
-                      priorityFilter === 'medium' 
-                        ? (darkMode ? 'bg-yellow-600 text-white' : 'bg-yellow-600 text-white')
-                        : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
-                    }`}
-                  >
-                    Medium
-                  </button>
-                  <button
-                    onClick={() => setPriorityFilter(priorityFilter === 'low' ? 'all' : 'low')}
-                    className={`py-2 rounded-lg font-medium transition-all duration-300 ${
-                      priorityFilter === 'low' 
-                        ? (darkMode ? 'bg-green-600 text-white' : 'bg-green-600 text-white')
-                        : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
-                    }`}
-                  >
-                    Low
-                  </button>
-                </div>
-              </div>
-              
-              <div>
-                <label className={`block text-sm font-medium mb-1 ${
-                  darkMode ? 'text-gray-300' : 'text-gray-700'
-                }`}>
-                  Due Date
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => setDateFilter(dateFilter === 'today' ? 'all' : 'today')}
-                    className={`py-2 rounded-lg font-medium transition-all duration-300 ${
-                      dateFilter === 'today' 
-                        ? (darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white')
-                        : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
-                    }`}
-                  >
-                    Today
-                  </button>
-                  <button
-                    onClick={() => setDateFilter(dateFilter === 'tomorrow' ? 'all' : 'tomorrow')}
-                    className={`py-2 rounded-lg font-medium transition-all duration-300 ${
-                      dateFilter === 'tomorrow' 
-                        ? (darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white')
-                        : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
-                    }`}
-                  >
-                    Tomorrow
-                  </button>
-                  <button
-                    onClick={() => setDateFilter(dateFilter === 'thisWeek' ? 'all' : 'thisWeek')}
-                    className={`py-2 rounded-lg font-medium transition-all duration-300 ${
-                      dateFilter === 'thisWeek' 
-                        ? (darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white')
-                        : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
-                    }`}
-                  >
-                    This Week
-                  </button>
-                  <button
-                    onClick={() => setDateFilter(dateFilter === 'overdue' ? 'all' : 'overdue')}
-                    className={`py-2 rounded-lg font-medium transition-all duration-300 ${
-                      dateFilter === 'overdue' 
-                        ? (darkMode ? 'bg-red-600 text-white' : 'bg-red-600 text-white')
-                        : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
-                    }`}
-                  >
-                    Overdue
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-        
-        {/* Feature 9: Task Templates Button */}
-        <div className="mb-6">
-          <button
-            onClick={() => setShowTemplates(true)}
-            className={`w-full py-2 rounded-lg font-medium transition-all duration-300 flex items-center justify-center ${
-              darkMode 
-                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M5 4a1 1 0 00-2 0v7.268a2 2 0 000 3.464V16a1 1 0 102 0v-1.268a2 2 0 000-3.464V4zM11 4a1 1 0 10-2 0v1.268a2 2 0 000 3.464V16a1 1 0 102 0V8.732a2 2 0 000-3.464V4zM16 3a1 1 0 011 1v7.268a2 2 0 010 3.464V16a1 1 0 11-2 0v-1.268a2 2 0 010-3.464V4a1 1 0 011-1z" />
-            </svg>
-            Use Task Template
-          </button>
-        </div>
-        
-        {/* Add Task Form */}
-        {showAddForm && (
-          <div className="mb-6 p-4 rounded-xl transition-all duration-300 ${
-            darkMode ? 'bg-gray-700' : 'bg-indigo-50'
-          }">
-            <h3 className={`font-medium mb-3 ${
-              darkMode ? 'text-indigo-300' : 'text-indigo-800'
-            }`}>
-              Add New Task
-            </h3>
-            <div className="space-y-3">
-              <input
-                type="text"
-                value={newTask}
-                onChange={(e) => setNewTask(e.target.value)}
-                className={`w-full p-3 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
-                  darkMode 
-                    ? 'bg-gray-800 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
-                    : 'border border-gray-300 text-gray-900 focus:ring-indigo-500 focus:border-transparent'
-                }`}
-                placeholder="What needs to be done?"
-                onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-              />
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className={`block text-sm font-medium mb-1 ${
-                    darkMode ? 'text-gray-300' : 'text-gray-700'
-                  }`}>
-                    Due Date
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                    className={`w-full p-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
-                      darkMode 
-                        ? 'bg-gray-800 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
-                        : 'border border-gray-300 text-gray-900 focus:ring-indigo-500 focus:border-transparent'
-                    }`}
-                  />
-                </div>
-                
-                <div>
-                  <label className={`block text-sm font-medium mb-1 ${
-                    darkMode ? 'text-gray-300' : 'text-gray-700'
-                  }`}>
-                    Priority
-                  </label>
-                  <select
-                    value={priority}
-                    onChange={(e) => setPriority(e.target.value)}
-                    className={`w-full p-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
-                      darkMode 
-                        ? 'bg-gray-800 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
-                        : 'border border-gray-300 text-gray-900 focus:ring-indigo-500 focus:border-transparent'
-                    }`}
-                  >
-                    <option value="high">High</option>
-                    <option value="medium">Medium</option>
-                    <option value="low">Low</option>
-                  </select>
-                </div>
-              </div>
-              
-              <button
-                onClick={handleAdd}
-                className="w-full bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition-all duration-300 flex items-center justify-center transform hover:scale-105"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-                </svg>
-                Add Task
-              </button>
-            </div>
-          </div>
-        )}
-        
-        {/* Edit Task Form */}
-        {editId && (
-          <div 
-            id="edit-section"
-            className={`mb-6 p-4 rounded-xl border-l-4 transition-all duration-500 ${
-              darkMode 
-                ? 'bg-gray-700 border-indigo-500' 
-                : 'bg-indigo-50 border-indigo-500'
-            } ${
-              editId ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-            }`}
-          >
-            <h3 className={`font-medium mb-3 flex items-center ${
-              darkMode ? 'text-indigo-300' : 'text-indigo-800'
-            }`}>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-              </svg>
-              Editing Task
-            </h3>
-            <div className="space-y-3">
-              <input
-                type="text"
-                value={editTask}
-                onChange={(e) => setEditTask(e.target.value)}
-                className={`w-full p-3 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
-                  darkMode 
-                    ? 'bg-gray-800 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
-                    : 'border border-indigo-300 text-gray-900 focus:ring-indigo-500 focus:border-transparent bg-white'
-                }`}
-                placeholder="Edit your task"
-                autoFocus
-                onKeyDown={(e) => e.key === 'Enter' && handleUpdate()}
-              />
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className={`block text-sm font-medium mb-1 ${
-                    darkMode ? 'text-gray-300' : 'text-gray-700'
-                  }`}>
-                    Due Date
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={editDueDate}
-                    onChange={(e) => setEditDueDate(e.target.value)}
-                    className={`w-full p-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
-                      darkMode 
-                        ? 'bg-gray-800 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
-                        : 'border border-indigo-300 text-gray-900 focus:ring-indigo-500 focus:border-transparent bg-white'
-                    }`}
-                  />
-                </div>
-                
-                <div>
-                  <label className={`block text-sm font-medium mb-1 ${
-                    darkMode ? 'text-gray-300' : 'text-gray-700'
-                  }`}>
-                    Priority
-                  </label>
-                  <select
-                    value={editPriority}
-                    onChange={(e) => setEditPriority(e.target.value)}
-                    className={`w-full p-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
-                      darkMode 
-                        ? 'bg-gray-800 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
-                        : 'border border-indigo-300 text-gray-900 focus:ring-indigo-500 focus:border-transparent bg-white'
-                    }`}
-                  >
-                    <option value="high">High</option>
-                    <option value="medium">Medium</option>
-                    <option value="low">Low</option>
-                  </select>
-                </div>
-              </div>
-              
-              <div className="flex space-x-3">
-                <button
-                  onClick={handleUpdate}
-                  className="flex-1 bg-green-600 text-white py-2.5 rounded-lg hover:bg-green-700 transition-all duration-300 font-medium transform hover:scale-[1.02]"
-                >
-                  Save Changes
-                </button>
-                <button
-                  onClick={cancelEdit}
-                  className="flex-1 bg-gray-500 text-white py-2.5 rounded-lg hover:bg-gray-600 transition-all duration-300 font-medium transform hover:scale-[1.02]"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* Feature 5: Collapsible Sections */}
-        <div className="space-y-3 max-h-96 overflow-y-auto pr-2 transition-all duration-300">
-          {sortedTodos.length === 0 ? (
-            <div className="text-center py-8 transition-all duration-500">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-              <p className={darkMode ? 'text-gray-400' : 'text-gray-500'}>
-                {searchTerm || filter !== 'all' || priorityFilter !== 'all' || dateFilter !== 'all' 
-                  ? 'No tasks match your search or filter.' 
-                  : 'No tasks yet. Add a task to get started!'}
-              </p>
-              {serverStatus === 'offline' && (
-                <p className="text-red-500 mt-2 text-sm">Server is offline. Please start the server to sync tasks.</p>
-              )}
-            </div>
-          ) : (
-            <>
-              {/* Overdue Section */}
-              {taskGroups.overdue.length > 0 && (
-                <div className="mb-4">
-                  <button 
-                    onClick={() => toggleSection('overdue')}
-                    className="flex items-center w-full p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-2 transition-transform duration-300 ${expandedSections.overdue ? 'rotate-90' : ''}`} viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    </svg>
-                    <span className="font-medium text-red-500">Overdue ({taskGroups.overdue.length})</span>
-                  </button>
-                  
-                  {expandedSections.overdue && (
-                    <div className="mt-2 space-y-3 pl-7">
-                      {taskGroups.overdue.map(todo => renderTaskItem(todo))}
-                    </div>
-                  )}
-                </div>
-              )}
-              
-              {/* Today Section */}
-              {taskGroups.today.length > 0 && (
-                <div className="mb-4">
-                  <button 
-                    onClick={() => toggleSection('today')}
-                    className="flex items-center w-full p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-2 transition-transform duration-300 ${expandedSections.today ? 'rotate-90' : ''}`} viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    </svg>
-                    <span className="font-medium">Today ({taskGroups.today.length})</span>
-                  </button>
-                  
-                  {expandedSections.today && (
-                    <div className="mt-2 space-y-3 pl-7">
-                      {taskGroups.today.map(todo => renderTaskItem(todo))}
-                    </div>
-                  )}
-                </div>
-              )}
-              
-              {/* Tomorrow Section */}
-              {taskGroups.tomorrow.length > 0 && (
-                <div className="mb-4">
-                  <button 
-                    onClick={() => toggleSection('tomorrow')}
-                    className="flex items-center w-full p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-2 transition-transform duration-300 ${expandedSections.tomorrow ? 'rotate-90' : ''}`} viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    </svg>
-                    <span className="font-medium">Tomorrow ({taskGroups.tomorrow.length})</span>
-                  </button>
-                  
-                  {expandedSections.tomorrow && (
-                    <div className="mt-2 space-y-3 pl-7">
-                      {taskGroups.tomorrow.map(todo => renderTaskItem(todo))}
-                    </div>
-                  )}
-                </div>
-              )}
-              
-              {/* This Week Section */}
-              {taskGroups.thisWeek.length > 0 && (
-                <div className="mb-4">
-                  <button 
-                    onClick={() => toggleSection('thisWeek')}
-                    className="flex items-center w-full p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-2 transition-transform duration-300 ${expandedSections.thisWeek ? 'rotate-90' : ''}`} viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    </svg>
-                    <span className="font-medium">This Week ({taskGroups.thisWeek.length})</span>
-                  </button>
-                  
-                  {expandedSections.thisWeek && (
-                    <div className="mt-2 space-y-3 pl-7">
-                      {taskGroups.thisWeek.map(todo => renderTaskItem(todo))}
-                    </div>
-                  )}
-                </div>
-              )}
-              
-              {/* Later Section */}
-              {taskGroups.later.length > 0 && (
-                <div className="mb-4">
-                  <button 
-                    onClick={() => toggleSection('later')}
-                    className="flex items-center w-full p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-2 transition-transform duration-300 ${expandedSections.later ? 'rotate-90' : ''}`} viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    </svg>
-                    <span className="font-medium">Later ({taskGroups.later.length})</span>
-                  </button>
-                  
-                  {expandedSections.later && (
-                    <div className="mt-2 space-y-3 pl-7">
-                      {taskGroups.later.map(todo => renderTaskItem(todo))}
-                    </div>
-                  )}
-                </div>
-              )}
-              
-              {/* No Date Section */}
-              {taskGroups.noDate.length > 0 && (
-                <div className="mb-4">
-                  <button 
-                    onClick={() => toggleSection('noDate')}
-                    className="flex items-center w-full p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-2 transition-transform duration-300 ${expandedSections.noDate ? 'rotate-90' : ''}`} viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    </svg>
-                    <span className="font-medium">No Date ({taskGroups.noDate.length})</span>
-                  </button>
-                  
-                  {expandedSections.noDate && (
-                    <div className="mt-2 space-y-3 pl-7">
-                      {taskGroups.noDate.map(todo => renderTaskItem(todo))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </>
-          )}
-        </div>
-        
-        {/* Feature 6: Keyboard Shortcuts Help Button */}
-        <div className="mt-4 text-center">
-          <button
-            onClick={() => setShowShortcutsHelp(true)}
-            className={`text-sm ${
-              darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Press / for keyboard shortcuts
-          </button>
-        </div>
+        <Header />
+        <ServerStatus />
+        <ProgressBar />
+        <SearchAndFilters />
+        <TaskTemplatesButton />
+        <AddTaskForm />
+        <EditTaskForm />
+        <TaskList />
+        <KeyboardShortcutsHint />
       </div>
       
       <Modal />
@@ -1832,7 +1780,6 @@ const App = () => {
           background: #6B7280;
         }
         
-        /* Mobile responsiveness improvements */
         @media (max-width: 640px) {
           .grid {
             grid-template-columns: 1fr;
@@ -1842,17 +1789,14 @@ const App = () => {
             font-size: 14px;
           }
           
-          /* Better touch targets for mobile */
           button {
             min-height: 44px;
           }
           
-          /* Improve spacing for mobile */
           .space-y-3 > * + * {
             margin-top: 0.75rem;
           }
           
-          /* Better text overflow handling */
           .truncate {
             overflow: hidden;
             text-overflow: ellipsis;
@@ -1860,19 +1804,15 @@ const App = () => {
           }
         }
         
-        /* Small screen improvements */
         @media (max-width: 480px) {
-          /* Reduce padding on very small screens */
           .p-4 {
             padding: 1rem;
           }
           
-          /* Adjust font sizes for very small screens */
           h1 {
             font-size: 1.5rem;
           }
           
-          /* Make buttons full width on small screens */
           .flex.space-x-3 {
             gap: 0.5rem;
           }
@@ -1884,135 +1824,6 @@ const App = () => {
       `}</style>
     </div>
   );
-  
-  // Helper function to render task items with animations
-  function renderTaskItem(todo) {
-    // Feature 2: Animation classes
-    const isNew = newTaskId === todo.id;
-    const isDeleted = deletedTaskId === todo.id;
-    const isCompleted = completedTaskId === todo.id;
-    
-    let animationClass = '';
-    if (isNew) animationClass = 'animate-slide-in';
-    if (isDeleted) animationClass = 'animate-fade-out';
-    if (isCompleted) animationClass = 'animate-check';
-    
-    return (
-      <li 
-        key={todo.id} 
-        className={`task-item flex flex-col p-4 rounded-xl shadow-sm transition-all duration-300 ${
-          editId === todo.id 
-            ? (darkMode 
-              ? 'bg-gray-700 border-l-4 border-indigo-500 transform scale-[1.02]' 
-              : 'bg-indigo-50 border-l-4 border-indigo-500 transform scale-[1.02]')
-            : (darkMode 
-              ? 'bg-gray-700 hover:bg-gray-600' 
-              : 'bg-white border border-gray-200 hover:bg-gray-50 hover:shadow-md')
-        } ${animationClass}`}
-        style={isDeleted ? { height: 0, padding: 0, margin: 0, opacity: 0 } : {}}
-      >
-        <div className="flex justify-between items-start">
-          <div className="flex items-start">
-            <button
-              onClick={() => toggleTaskCompletion(todo.id)}
-              className={`mr-3 flex items-center justify-center w-6 h-6 rounded-full border-2 transition-all duration-300 mt-1 ${
-                todo.completed 
-                  ? (darkMode ? 'bg-green-500 border-green-500' : 'bg-green-500 border-green-500')
-                  : (darkMode ? 'border-gray-400 hover:border-gray-300' : 'border-gray-300 hover:border-gray-400')
-              }`}
-              aria-label={todo.completed ? 'Mark as incomplete' : 'Mark as complete'}
-            >
-              {todo.completed && (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-              )}
-            </button>
-            <div className="flex-1 min-w-0">
-              <span className={`font-medium transition-colors duration-300 break-words ${
-                todo.completed 
-                  ? (darkMode ? 'text-gray-400 line-through' : 'text-gray-400 line-through')
-                  : (darkMode ? 'text-white' : 'text-gray-800')
-              }`}>
-                {/* Feature 3: Search highlighting */}
-                {searchTerm && todo.task.toLowerCase().includes(searchTerm.toLowerCase()) ? (
-                  <>
-                    {todo.task.split(new RegExp(`(${searchTerm})`, 'gi')).map((part, index) => 
-                      part.toLowerCase() === searchTerm.toLowerCase() ? (
-                        <mark key={index} className="bg-yellow-300 text-gray-900 dark:bg-yellow-500 dark:text-gray-900">
-                          {part}
-                        </mark>
-                      ) : (
-                        part
-                      )
-                    )}
-                  </>
-                ) : (
-                  capitalizeFirstWord(todo.task)
-                )}
-              </span>
-              
-              <div className="flex flex-wrap items-center mt-2 gap-2">
-                {todo.dueDate && (
-                  <div className={`flex items-center text-xs ${
-                    isOverdue(todo.dueDate) && !todo.completed
-                      ? 'text-red-500 font-medium'
-                      : (darkMode ? 'text-gray-400' : 'text-gray-500')
-                  }`}>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                    </svg>
-                    <span className="truncate max-w-[120px] sm:max-w-xs">{formatDate(todo.dueDate)}</span>
-                    {isOverdue(todo.dueDate) && !todo.completed && (
-                      <span className="ml-1">• Overdue</span>
-                    )}
-                  </div>
-                )}
-                
-                <div className="flex items-center">
-                  <span className={`inline-block w-2 h-2 rounded-full mr-1 ${getPriorityColor(todo.priority)}`}></span>
-                  <span className={`text-xs ${
-                    darkMode ? 'text-gray-400' : 'text-gray-500'
-                  }`}>
-                    {getPriorityLabel(todo.priority)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex space-x-2 flex-shrink-0">
-            <button
-              onClick={() => handleEdit(todo)}
-              className={`p-2 rounded-lg transition-all duration-300 transform hover:scale-110 ${
-                darkMode 
-                  ? 'bg-yellow-900 text-yellow-300 hover:bg-yellow-800' 
-                  : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-              }`}
-              aria-label="Edit task"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-              </svg>
-            </button>
-            <button
-              onClick={() => handleDelete(todo.id)}
-              className={`p-2 rounded-lg transition-all duration-300 transform hover:scale-110 ${
-                darkMode 
-                  ? 'bg-red-900 text-red-300 hover:bg-red-800' 
-                  : 'bg-red-100 text-red-700 hover:bg-red-200'
-              }`}
-              aria-label="Delete task"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </li>
-    );
-  }
 };
 
 export default App;
