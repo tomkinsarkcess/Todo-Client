@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-
 // Main App Component
 const App = () => {
   const [todos, setTodos] = useState([]);
@@ -24,6 +23,7 @@ const App = () => {
   const [newTaskId, setNewTaskId] = useState(null);
   const [deletedTaskId, setDeletedTaskId] = useState(null);
   const [completedTaskId, setCompletedTaskId] = useState(null);
+  const [isAddingTask, setIsAddingTask] = useState(false);
   
   // Enhanced filter states
   const [priorityFilter, setPriorityFilter] = useState('all');
@@ -262,6 +262,9 @@ const App = () => {
       return;
     }
     
+    // Show loading state
+    setIsAddingTask(true);
+    
     const newTodo = {
       id: Date.now(),
       task: newTask,
@@ -271,6 +274,20 @@ const App = () => {
       notified: false,
       createdAt: new Date().toISOString()
     };
+    
+    // Add to UI immediately for better UX
+    const updatedTodos = [...todos, newTodo];
+    setTodos(updatedTodos);
+    saveTodosToLocalStorage(updatedTodos);
+    
+    setNewTaskId(newTodo.id);
+    setTimeout(() => setNewTaskId(null), 1000);
+    
+    // Reset form
+    setNewTask('');
+    setPriority('medium');
+    const now = new Date();
+    setDueDate(now.toISOString().slice(0, 16));
     
     try {
       const response = await fetch(`${API_URL}/todos`, {
@@ -282,38 +299,18 @@ const App = () => {
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
       
       const savedTodo = await response.json();
-      const updatedTodos = [...todos, savedTodo];
-      setTodos(updatedTodos);
-      saveTodosToLocalStorage(updatedTodos);
+      // Replace the temporary todo with the server one
+      const finalTodos = updatedTodos.map(todo => 
+        todo.id === newTodo.id ? savedTodo : todo
+      );
+      setTodos(finalTodos);
+      saveTodosToLocalStorage(finalTodos);
       
-      setNewTaskId(savedTodo.id);
-      setTimeout(() => setNewTaskId(null), 1000);
-      
-      setNewTask('');
-      setDueDate('');
-      setPriority('medium');
-      
-      const now = new Date();
-      setDueDate(now.toISOString().slice(0, 16));
-      
-      // Removed success modal as requested
+      setIsAddingTask(false);
     } catch (error) {
       console.error('Error adding todo:', error);
-      const updatedTodos = [...todos, newTodo];
-      setTodos(updatedTodos);
-      saveTodosToLocalStorage(updatedTodos);
-      
-      setNewTaskId(newTodo.id);
-      setTimeout(() => setNewTaskId(null), 1000);
-      
-      setNewTask('');
-      setDueDate('');
-      setPriority('medium');
-      
-      const now = new Date();
-      setDueDate(now.toISOString().slice(0, 16));
-      
-      showModal('error', `Failed to add task to server: ${error.message}. Saved locally only.`);
+      setIsAddingTask(false);
+      showModal('error', `Failed to sync task with server: ${error.message}. Saved locally only.`);
     }
   };
   
@@ -362,8 +359,6 @@ const App = () => {
       setEditDueDate('');
       setEditPriority('medium');
       setShowAddForm(true);
-      
-      // Removed success modal as requested
     } catch (error) {
       console.error('Error updating todo:', error);
       
@@ -427,9 +422,13 @@ const App = () => {
         return;
       }
       
-      // Fixed: Set animation first, then delete after delay
+      // Set animation first
       setDeletedTaskId(deleteId);
       
+      // Close modal immediately after setting animation
+      closeModal();
+      
+      // Wait for animation to complete before deleting
       setTimeout(async () => {
         try {
           const response = await fetch(`${API_URL}/todos/${deleteId}`, {
@@ -438,14 +437,12 @@ const App = () => {
           });
           
           if (response.ok) {
-            const updatedTodos = todos.filter(todo => todo.id !== id);
+            const updatedTodos = todos.filter(todo => todo.id !== deleteId);
             setTodos(updatedTodos);
             saveTodosToLocalStorage(updatedTodos);
-            closeModal();
             setDeletedTaskId(null);
           } else if (response.status === 404) {
             await fetchTodos();
-            closeModal();
             setDeletedTaskId(null);
             showModal('info', 'This task may have been already deleted. The task list has been refreshed.');
           } else {
@@ -470,7 +467,6 @@ const App = () => {
           const updatedTodos = todos.filter(todo => todo.id !== id);
           setTodos(updatedTodos);
           saveTodosToLocalStorage(updatedTodos);
-          closeModal();
           setDeletedTaskId(null);
           
           let userMessage = 'Failed to delete task on server.';
@@ -480,7 +476,7 @@ const App = () => {
           
           showModal('error', `${userMessage} Deleted locally only.`);
         }
-      }, 300);
+      }, 300); // Match animation duration
     } catch (error) {
       console.error('Error in confirmDelete:', error);
       closeModal();
@@ -981,12 +977,10 @@ const App = () => {
         aria-label="Toggle dark mode"
       >
         {darkMode ? (
-          // Fixed dark mode icon
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
           </svg>
         ) : (
-          // Fixed light mode icon
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
             <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
           </svg>
@@ -1102,7 +1096,7 @@ const App = () => {
         <div className="flex space-x-2">
           <button
             onClick={() => setFilter('all')}
-            className={`flex-1 py-2 rounded-lg font-medium transition-all duration-300 ${
+            className={`flex-1 py-3 rounded-lg font-medium transition-all duration-300 ${
               filter === 'all' 
                 ? (darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white')
                 : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
@@ -1112,7 +1106,7 @@ const App = () => {
           </button>
           <button
             onClick={() => setFilter('active')}
-            className={`flex-1 py-2 rounded-lg font-medium transition-all duration-300 ${
+            className={`flex-1 py-3 rounded-lg font-medium transition-all duration-300 ${
               filter === 'active' 
                 ? (darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white')
                 : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
@@ -1122,7 +1116,7 @@ const App = () => {
           </button>
           <button
             onClick={() => setFilter('completed')}
-            className={`flex-1 py-2 rounded-lg font-medium transition-all duration-300 ${
+            className={`flex-1 py-3 rounded-lg font-medium transition-all duration-300 ${
               filter === 'completed' 
                 ? (darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white')
                 : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
@@ -1134,7 +1128,7 @@ const App = () => {
         
         <button
           onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-          className={`w-full py-2 rounded-lg font-medium transition-all duration-300 flex items-center justify-center ${
+          className={`w-full py-3 rounded-lg font-medium transition-all duration-300 flex items-center justify-center ${
             darkMode 
               ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -1159,7 +1153,7 @@ const App = () => {
                   <button
                     key={p}
                     onClick={() => setPriorityFilter(priorityFilter === p ? 'all' : p)}
-                    className={`py-2 rounded-lg font-medium transition-all duration-300 ${
+                    className={`py-3 rounded-lg font-medium transition-all duration-300 ${
                       priorityFilter === p 
                         ? (darkMode ? `bg-${p === 'high' ? 'red' : p === 'medium' ? 'yellow' : 'green'}-600 text-white` : `bg-${p === 'high' ? 'red' : p === 'medium' ? 'yellow' : 'green'}-600 text-white`)
                         : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
@@ -1186,7 +1180,7 @@ const App = () => {
                     <button
                       key={d}
                       onClick={() => setDateFilter(dateFilter === d ? 'all' : d)}
-                      className={`py-2 rounded-lg font-medium transition-all duration-300 ${
+                      className={`py-3 rounded-lg font-medium transition-all duration-300 ${
                         dateFilter === d 
                           ? (darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white')
                           : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
@@ -1208,7 +1202,7 @@ const App = () => {
     <div className="mb-6">
       <button
         onClick={() => setShowTemplates(true)}
-        className={`w-full py-2 rounded-lg font-medium transition-all duration-300 flex items-center justify-center ${
+        className={`w-full py-3 rounded-lg font-medium transition-all duration-300 flex items-center justify-center ${
           darkMode 
             ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -1224,9 +1218,7 @@ const App = () => {
   
   const AddTaskForm = () => (
     showAddForm && (
-      <div className="mb-6 p-4 rounded-xl transition-all duration-300 ${
-        darkMode ? 'bg-gray-700' : 'bg-indigo-50'
-      }">
+      <div className="mb-6 p-4 rounded-xl transition-all duration-300">
         <h3 className={`font-medium mb-3 ${
           darkMode ? 'text-indigo-300' : 'text-indigo-800'
         }`}>
@@ -1239,7 +1231,7 @@ const App = () => {
             onChange={(e) => setNewTask(e.target.value)}
             className={`w-full p-3 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
               darkMode 
-                ? 'bg-gray-800 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
+                ? 'bg-gray-700 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
                 : 'border border-gray-300 text-gray-900 focus:ring-indigo-500 focus:border-transparent'
             }`}
             placeholder="What needs to be done?"
@@ -1259,7 +1251,7 @@ const App = () => {
                 onChange={(e) => setDueDate(e.target.value)}
                 className={`w-full p-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
                   darkMode 
-                    ? 'bg-gray-800 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
+                    ? 'bg-gray-700 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
                     : 'border border-gray-300 text-gray-900 focus:ring-indigo-500 focus:border-transparent'
                 }`}
               />
@@ -1271,7 +1263,6 @@ const App = () => {
               }`}>
                 Priority
               </label>
-              {/* Fixed radio buttons for priority */}
               <div className="flex space-x-4">
                 {['high', 'medium', 'low'].map((p) => (
                   <label key={p} className="flex items-center">
@@ -1285,7 +1276,7 @@ const App = () => {
                     />
                     <div 
                       onClick={() => setPriority(p)}
-                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center cursor-pointer transition-colors duration-200 ${
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center cursor-pointer transition-colors duration-200 ${
                         priority === p 
                           ? (p === 'high' ? 'border-red-500 bg-red-500' : 
                              p === 'medium' ? 'border-yellow-500 bg-yellow-500' : 
@@ -1294,7 +1285,7 @@ const App = () => {
                       }`}
                     >
                       {priority === p && (
-                        <div className="w-2 h-2 rounded-full bg-white"></div>
+                        <div className="w-3 h-3 rounded-full bg-white"></div>
                       )}
                     </div>
                     <span className="ml-1 text-sm capitalize">{p}</span>
@@ -1306,12 +1297,29 @@ const App = () => {
           
           <button
             onClick={handleAdd}
-            className="w-full bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition-all duration-300 flex items-center justify-center transform hover:scale-105"
+            disabled={isAddingTask}
+            className={`w-full p-3 rounded-lg transition-all duration-300 flex items-center justify-center transform hover:scale-105 ${
+              isAddingTask 
+                ? 'bg-indigo-400 cursor-not-allowed' 
+                : 'bg-indigo-600 text-white hover:bg-indigo-700'
+            }`}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-            </svg>
-            Add Task
+            {isAddingTask ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Adding...
+              </>
+            ) : (
+              <>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                </svg>
+                Add Task
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -1345,7 +1353,7 @@ const App = () => {
             onChange={(e) => setEditTask(e.target.value)}
             className={`w-full p-3 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
               darkMode 
-                ? 'bg-gray-800 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
+                ? 'bg-gray-700 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
                 : 'border border-indigo-300 text-gray-900 focus:ring-indigo-500 focus:border-transparent bg-white'
             }`}
             placeholder="Edit your task"
@@ -1366,7 +1374,7 @@ const App = () => {
                 onChange={(e) => setEditDueDate(e.target.value)}
                 className={`w-full p-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
                   darkMode 
-                    ? 'bg-gray-800 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
+                    ? 'bg-gray-700 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
                     : 'border border-indigo-300 text-gray-900 focus:ring-indigo-500 focus:border-transparent bg-white'
                 }`}
               />
@@ -1378,7 +1386,6 @@ const App = () => {
               }`}>
                 Priority
               </label>
-              {/* Fixed radio buttons for edit priority */}
               <div className="flex space-x-4">
                 {['high', 'medium', 'low'].map((p) => (
                   <label key={p} className="flex items-center">
@@ -1392,7 +1399,7 @@ const App = () => {
                     />
                     <div 
                       onClick={() => setEditPriority(p)}
-                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center cursor-pointer transition-colors duration-200 ${
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center cursor-pointer transition-colors duration-200 ${
                         editPriority === p 
                           ? (p === 'high' ? 'border-red-500 bg-red-500' : 
                              p === 'medium' ? 'border-yellow-500 bg-yellow-500' : 
@@ -1401,7 +1408,7 @@ const App = () => {
                       }`}
                     >
                       {editPriority === p && (
-                        <div className="w-2 h-2 rounded-full bg-white"></div>
+                        <div className="w-3 h-3 rounded-full bg-white"></div>
                       )}
                     </div>
                     <span className="ml-1 text-sm capitalize">{p}</span>
@@ -1414,13 +1421,13 @@ const App = () => {
           <div className="flex space-x-3">
             <button
               onClick={handleUpdate}
-              className="flex-1 bg-green-600 text-white py-2.5 rounded-lg hover:bg-green-700 transition-all duration-300 font-medium transform hover:scale-[1.02]"
+              className="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-all duration-300 font-medium transform hover:scale-[1.02]"
             >
               Save Changes
             </button>
             <button
               onClick={cancelEdit}
-              className="flex-1 bg-gray-500 text-white py-2.5 rounded-lg hover:bg-gray-600 transition-all duration-300 font-medium transform hover:scale-[1.02]"
+              className="flex-1 bg-gray-500 text-white py-3 rounded-lg hover:bg-gray-600 transition-all duration-300 font-medium transform hover:scale-[1.02]"
             >
               Cancel
             </button>
@@ -1467,7 +1474,7 @@ const App = () => {
                 <div key={sectionName} className="mb-4">
                   <button 
                     onClick={() => toggleSection(sectionName)}
-                    className="flex items-center w-full p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
+                    className="flex items-center w-full p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-2 transition-transform duration-300 ${expandedSections[sectionName] ? 'rotate-90' : ''}`} viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
@@ -1568,29 +1575,29 @@ const App = () => {
           </div>
           
           <div className="space-y-3">
-            <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex justify-between items-center py-3 border-b border-gray-200 dark:border-gray-700">
               <span className="text-gray-700 dark:text-gray-300">Focus search</span>
-              <span className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded text-sm font-mono">Ctrl/Cmd + K</span>
+              <span className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded text-sm font-mono">Ctrl/Cmd + K</span>
             </div>
-            <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex justify-between items-center py-3 border-b border-gray-200 dark:border-gray-700">
               <span className="text-gray-700 dark:text-gray-300">Add new task</span>
-              <span className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded text-sm font-mono">N</span>
+              <span className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded text-sm font-mono">N</span>
             </div>
-            <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex justify-between items-center py-3 border-b border-gray-200 dark:border-gray-700">
               <span className="text-gray-700 dark:text-gray-300">Toggle dark mode</span>
-              <span className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded text-sm font-mono">D</span>
+              <span className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded text-sm font-mono">D</span>
             </div>
-            <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex justify-between items-center py-3 border-b border-gray-200 dark:border-gray-700">
               <span className="text-gray-700 dark:text-gray-300">Show shortcuts</span>
-              <span className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded text-sm font-mono">/</span>
+              <span className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded text-sm font-mono">/</span>
             </div>
-            <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex justify-between items-center py-3 border-b border-gray-200 dark:border-gray-700">
               <span className="text-gray-700 dark:text-gray-300">Show templates</span>
-              <span className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded text-sm font-mono">T</span>
+              <span className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded text-sm font-mono">T</span>
             </div>
-            <div className="flex justify-between items-center py-2">
+            <div className="flex justify-between items-center py-3">
               <span className="text-gray-700 dark:text-gray-300">Toggle filters</span>
-              <span className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded text-sm font-mono">F</span>
+              <span className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded text-sm font-mono">F</span>
             </div>
           </div>
         </div>
@@ -1626,7 +1633,7 @@ const App = () => {
             {taskTemplates.map((template, index) => (
               <div 
                 key={index}
-                className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors duration-200"
+                className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors duration-200"
                 onClick={() => applyTemplate(template)}
               >
                 <div className="flex justify-between items-center">
@@ -1780,17 +1787,11 @@ const App = () => {
           background: #6B7280;
         }
         
+        /* Mobile-specific styles */
         @media (max-width: 640px) {
-          .grid {
-            grid-template-columns: 1fr;
-          }
-          
-          input[type="datetime-local"] {
-            font-size: 14px;
-          }
-          
           button {
-            min-height: 44px;
+            min-height: 44px; /* Minimum touch target size */
+            padding: 12px 16px;
           }
           
           .space-y-3 > * + * {
@@ -1801,6 +1802,53 @@ const App = () => {
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+          }
+          
+          /* Make radio buttons larger on mobile */
+          input[type="radio"] {
+            width: 20px;
+            height: 20px;
+          }
+          
+          /* Ensure proper spacing in modals */
+          .modal-content {
+            padding: 1rem;
+          }
+          
+          /* Make task items easier to tap */
+          .task-item {
+            padding: 1rem;
+          }
+          
+          /* Make edit and delete buttons larger */
+          .task-item button {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          
+          /* Make icons larger */
+          svg {
+            width: 24px;
+            height: 24px;
+          }
+          
+          /* Make form inputs larger */
+          input {
+            padding: 14px;
+            font-size: 16px; /* Prevents zoom on iOS */
+          }
+          
+          /* Make filter buttons larger */
+          .filter-buttons button {
+            padding: 14px;
+          }
+          
+          /* Make section headers larger */
+          .section-header {
+            padding: 14px;
           }
         }
         
@@ -1820,10 +1868,21 @@ const App = () => {
           .flex.space-x-3 button {
             flex: 1;
           }
+          
+          /* Make radio buttons even larger on very small screens */
+          input[type="radio"] {
+            width: 24px;
+            height: 24px;
+          }
+          
+          /* Make priority indicators larger */
+          .priority-indicator {
+            width: 12px;
+            height: 12px;
+          }
         }
       `}</style>
     </div>
   );
 };
-
 export default App;
