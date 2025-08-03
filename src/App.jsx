@@ -18,7 +18,8 @@ const App = () => {
   const [editDueDate, setEditDueDate] = useState('');
   const [editPriority, setEditPriority] = useState('medium');
   const [showAddForm, setShowAddForm] = useState(true);
-  const API_URL = import.meta.env.VITE_API_URL || 'https://todo-server-mogodb.onrender.com';
+  //Fixed API URL to use environment variable typo =='https://todo-server-mogodb.onrender.com'===
+  const API_URL = import.meta.env.VITE_API_URL || 'https://todo-server-mongodb.onrender.com';
   
   // Use ref to store the todo ID to delete
   const todoToDeleteRef = useRef(null);
