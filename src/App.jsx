@@ -421,9 +421,8 @@ const App = () => {
         saveTodosToLocalStorage(updatedTodos);
         closeModal();
         
-        setTimeout(() => {
-          showModal('success', 'Task deleted successfully!');
-        }, 300);
+        // FIXED: Removed the artificial delay here
+        showModal('success', 'Task deleted successfully!');
       } else if (response.status === 404) {
         console.log('Task not found, refreshing the list');
         await fetchTodos();
@@ -564,9 +563,12 @@ const App = () => {
     return new Date(dueDate) < new Date();
   };
   
+  // FIXED: Optimized modal state management to reduce delays
   const showModal = (type, message = '') => {
+    let content;
+    
     if (type === 'validation') {
-      setModalContent({
+      content = {
         type: 'validation',
         title: 'Validation Error',
         message,
@@ -578,9 +580,9 @@ const App = () => {
         actions: [
           { label: 'OK', onClick: closeModal, primary: true }
         ]
-      });
+      };
     } else if (type === 'delete') {
-      setModalContent({
+      content = {
         type: 'delete',
         title: 'Confirm Delete',
         message: 'Are you sure you want to delete this task? This action cannot be undone.',
@@ -593,9 +595,9 @@ const App = () => {
           { label: 'Delete', onClick: confirmDelete, primary: true, danger: true },
           { label: 'Cancel', onClick: closeModal }
         ]
-      });
+      };
     } else if (type === 'success') {
-      setModalContent({
+      content = {
         type: 'success',
         title: 'Success',
         message,
@@ -607,9 +609,9 @@ const App = () => {
         actions: [
           { label: 'Great!', onClick: closeModal, primary: true }
         ]
-      });
+      };
     } else if (type === 'error') {
-      setModalContent({
+      content = {
         type: 'error',
         title: 'Error',
         message,
@@ -621,9 +623,9 @@ const App = () => {
         actions: [
           { label: 'OK', onClick: closeModal, primary: true }
         ]
-      });
+      };
     } else if (type === 'info') {
-      setModalContent({
+      content = {
         type: 'info',
         title: 'Information',
         message,
@@ -635,8 +637,11 @@ const App = () => {
         actions: [
           { label: 'OK', onClick: closeModal, primary: true }
         ]
-      });
+      };
     }
+    
+    // FIXED: Set all state at once to avoid multiple re-renders
+    setModalContent(content);
     setIsModalOpen(true);
     setModalAnimation('animate-fade-in');
   };
@@ -1144,7 +1149,7 @@ const App = () => {
         }
         
         .animate-fade-in {
-          animation: fade-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+          animation: fade-in 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
         }
         
         .animate-fade-out {
