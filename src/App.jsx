@@ -854,7 +854,7 @@ const App = () => {
                     type="datetime-local"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
-                    className={`w-full p-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
+                    className={`w-full p-3 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
                       darkMode 
                         ? 'bg-gray-800 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
                         : 'border border-gray-300 text-gray-900 focus:ring-indigo-500 focus:border-transparent'
@@ -943,7 +943,7 @@ const App = () => {
                     type="datetime-local"
                     value={editDueDate}
                     onChange={(e) => setEditDueDate(e.target.value)}
-                    className={`w-full p-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
+                    className={`w-full p-3 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
                       darkMode 
                         ? 'bg-gray-800 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
                         : 'border border-indigo-300 text-gray-900 focus:ring-indigo-500 focus:border-transparent bg-white'
@@ -1144,7 +1144,7 @@ const App = () => {
         }
         
         .animate-fade-in {
-          animation: fade-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+          animation: fade-in 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
         }
         
         .animate-fade-out {
