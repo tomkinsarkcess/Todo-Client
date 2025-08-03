@@ -844,9 +844,9 @@ const App = () => {
                 )}
               </span>
               
-              <div className="flex flex-wrap items-center mt-2 gap-2">
+              <div className="flex flex-wrap items-center mt-3 gap-3">
                 {todo.dueDate && (
-                  <div className={`flex items-center text-xs ${
+                  <div className={`flex items-center text-sm ${
                     isOverdue(todo.dueDate) && !todo.completed
                       ? 'text-red-500 font-medium'
                       : (darkMode ? 'text-gray-400' : 'text-gray-500')
@@ -863,7 +863,7 @@ const App = () => {
                 
                 <div className="flex items-center">
                   <span className={`inline-block w-3 h-3 rounded-full mr-1 ${getPriorityColor(todo.priority)}`}></span>
-                  <span className={`text-xs ${
+                  <span className={`text-sm ${
                     darkMode ? 'text-gray-400' : 'text-gray-500'
                   }`}>
                     {getPriorityLabel(todo.priority)}
@@ -883,7 +883,7 @@ const App = () => {
               }`}
               aria-label="Edit task"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
               </svg>
             </button>
@@ -896,7 +896,7 @@ const App = () => {
               }`}
               aria-label="Delete task"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
             </button>
@@ -1230,7 +1230,7 @@ const App = () => {
                     />
                     <div 
                       onClick={() => setPriority(p)}
-                      className={`w-8 h-8 rounded-full border-2 flex items-center justify-center cursor-pointer transition-colors duration-200 ${
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center cursor-pointer transition-colors duration-200 ${
                         priority === p 
                           ? (p === 'high' ? 'border-red-500 bg-red-500' : 
                              p === 'medium' ? 'border-yellow-500 bg-yellow-500' : 
@@ -1239,7 +1239,7 @@ const App = () => {
                       }`}
                     >
                       {priority === p && (
-                        <div className="w-4 h-4 rounded-full bg-white"></div>
+                        <div className="w-3 h-3 rounded-full bg-white"></div>
                       )}
                     </div>
                     <span className="ml-1 text-sm capitalize">{p}</span>
@@ -1353,7 +1353,7 @@ const App = () => {
                     />
                     <div 
                       onClick={() => setEditPriority(p)}
-                      className={`w-8 h-8 rounded-full border-2 flex items-center justify-center cursor-pointer transition-colors duration-200 ${
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center cursor-pointer transition-colors duration-200 ${
                         editPriority === p 
                           ? (p === 'high' ? 'border-red-500 bg-red-500' : 
                              p === 'medium' ? 'border-yellow-500 bg-yellow-500' : 
@@ -1362,7 +1362,7 @@ const App = () => {
                       }`}
                     >
                       {editPriority === p && (
-                        <div className="w-4 h-4 rounded-full bg-white"></div>
+                        <div className="w-3 h-3 rounded-full bg-white"></div>
                       )}
                     </div>
                     <span className="ml-1 text-sm capitalize">{p}</span>
@@ -1688,18 +1688,13 @@ const App = () => {
             white-space: nowrap;
           }
           
-          /* Make radio buttons larger on mobile */
+          /* Make radio buttons smaller on mobile */
           input[type="radio"] {
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
           }
           
-          /* Ensure proper spacing in modals */
-          .modal-content {
-            padding: 1rem;
-          }
-          
-          /* Make task items easier to tap */
+          /* Make task items more spacious */
           .task-item {
             padding: 1.25rem;
           }
@@ -1715,8 +1710,8 @@ const App = () => {
           
           /* Make icons larger */
           svg {
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
           }
           
           /* Make form inputs larger */
@@ -1740,6 +1735,29 @@ const App = () => {
             width: 24px;
             height: 24px;
           }
+          
+          /* Make priority indicators properly sized */
+          .priority-indicator {
+            width: 12px;
+            height: 12px;
+          }
+          
+          /* Improve task list spacing */
+          .task-list-item {
+            margin-bottom: 1rem;
+          }
+          
+          /* Make task text more readable */
+          .task-text {
+            font-size: 16px;
+            line-height: 1.5;
+          }
+          
+          /* Make task details more spacious */
+          .task-details {
+            margin-top: 0.75rem;
+            gap: 0.75rem;
+          }
         }
         
         @media (max-width: 480px) {
@@ -1759,16 +1777,16 @@ const App = () => {
             flex: 1;
           }
           
-          /* Make radio buttons even larger on very small screens */
+          /* Make radio buttons even smaller on very small screens */
           input[type="radio"] {
-            width: 28px;
-            height: 28px;
+            width: 18px;
+            height: 18px;
           }
           
-          /* Make priority indicators larger */
+          /* Make priority indicators smaller */
           .priority-indicator {
-            width: 14px;
-            height: 14px;
+            width: 10px;
+            height: 10px;
           }
           
           /* Make task list items more spacious */
@@ -1784,14 +1802,25 @@ const App = () => {
           
           /* Make icons even larger */
           svg {
-            width: 28px;
-            height: 28px;
+            width: 18px;
+            height: 18px;
           }
           
           /* Make inputs even larger */
           input {
             padding: 18px;
             font-size: 18px;
+          }
+          
+          /* Make task text larger */
+          .task-text {
+            font-size: 18px;
+          }
+          
+          /* Make task details more spacious */
+          .task-details {
+            margin-top: 1rem;
+            gap: 1rem;
           }
         }
       `}</style>
