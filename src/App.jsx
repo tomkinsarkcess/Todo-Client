@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, memo } from 'react';
 import { createPortal } from 'react-dom';
 
 const App = () => {
@@ -53,6 +53,11 @@ const App = () => {
   
   const API_URL = import.meta.env.VITE_API_URL || 'https://todo-server-mongodb.onrender.com';
   const todoToDeleteRef = useRef(null);
+  
+  // Refs for input elements
+  const newTaskInputRef = useRef(null);
+  const editTaskInputRef = useRef(null);
+  const editSectionRef = useRef(null);
   
   // Dark mode
   useEffect(() => {
@@ -119,6 +124,25 @@ const App = () => {
     checkServerStatus();
     fetchTodos();
   }, []);
+  
+  // Focus management for edit form
+  useEffect(() => {
+    if (editId && editTaskInputRef.current) {
+      // Small timeout to ensure DOM is ready
+      setTimeout(() => {
+        editTaskInputRef.current.focus();
+      }, 50);
+    }
+  }, [editId]);
+  
+  // Focus management for add form
+  useEffect(() => {
+    if (showAddForm && newTaskInputRef.current) {
+      setTimeout(() => {
+        newTaskInputRef.current.focus();
+      }, 50);
+    }
+  }, [showAddForm]);
   
   const checkServerStatus = async () => {
     try {
@@ -273,9 +297,10 @@ const App = () => {
     setEditPriority(todo.priority || 'medium');
     setShowAddForm(false);
     
-    setTimeout(() => {
-      document.getElementById('edit-section')?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
+    // Remove setTimeout for scrolling as it might interfere with focus
+    if (editSectionRef.current) {
+      editSectionRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   };
   
   const handleUpdate = async () => {
@@ -785,7 +810,7 @@ const App = () => {
     return (
       <li 
         key={todo.id} 
-        className={`task-item flex flex-col p-4 rounded-xl shadow-sm transition-all duration-300 ${
+        className={`task-item flex flex-col p-4 md:p-4 rounded-xl shadow-sm transition-all duration-300 ${
           editId === todo.id 
             ? (darkMode 
               ? 'bg-gray-700 border-l-4 border-indigo-500 transform scale-[1.02]' 
@@ -800,7 +825,7 @@ const App = () => {
           <div className="flex items-start">
             <button
               onClick={() => toggleTaskCompletion(todo.id)}
-              className={`mr-3 flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-300 mt-1 ${
+              className={`mr-3 md:mr-3 flex items-center justify-center w-10 h-10 md:w-8 md:h-8 rounded-full border-2 transition-all duration-300 mt-1 ${
                 todo.completed 
                   ? (darkMode ? 'bg-green-500 border-green-500' : 'bg-green-500 border-green-500')
                   : (darkMode ? 'border-gray-400 hover:border-gray-300' : 'border-gray-300 hover:border-gray-400')
@@ -808,13 +833,13 @@ const App = () => {
               aria-label={todo.completed ? 'Mark as incomplete' : 'Mark as complete'}
             >
               {todo.completed && (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 md:h-4 md:w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
               )}
             </button>
             <div className="flex-1 min-w-0">
-              <span className={`font-medium transition-colors duration-300 break-words ${
+              <span className={`font-medium transition-colors duration-300 break-words text-lg md:text-base ${
                 todo.completed 
                   ? (darkMode ? 'text-gray-400 line-through' : 'text-gray-400 line-through')
                   : (darkMode ? 'text-white' : 'text-gray-800')
@@ -865,30 +890,30 @@ const App = () => {
             </div>
           </div>
           
-          <div className="flex space-x-2 flex-shrink-0">
+          <div className="flex space-x-3 md:space-x-2 flex-shrink-0">
             <button
               onClick={() => handleEdit(todo)}
-              className={`p-3 rounded-lg transition-all duration-300 transform hover:scale-110 ${
+              className={`p-4 md:p-3 rounded-lg transition-all duration-300 transform hover:scale-110 ${
                 darkMode 
                   ? 'bg-yellow-900 text-yellow-300 hover:bg-yellow-800' 
                   : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
               }`}
               aria-label="Edit task"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 md:h-5 md:w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
               </svg>
             </button>
             <button
               onClick={() => handleDelete(todo.id)}
-              className={`p-3 rounded-lg transition-all duration-300 transform hover:scale-110 ${
+              className={`p-4 md:p-3 rounded-lg transition-all duration-300 transform hover:scale-110 ${
                 darkMode 
                   ? 'bg-red-900 text-red-300 hover:bg-red-800' 
                   : 'bg-red-100 text-red-700 hover:bg-red-200'
               }`}
               aria-label="Delete task"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 md:h-5 md:w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
             </button>
@@ -898,14 +923,14 @@ const App = () => {
     );
   };
   
-  // Components
-  const Header = () => (
-    <div className="flex justify-between items-center mb-6">
+  // Memoized components
+  const Header = memo(() => (
+    <div className="flex justify-between items-center mb-6 md:mb-6">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold mb-1 transition-colors duration-300">
           {darkMode ? 'Todo App' : 'Todo App'}
         </h1>
-        <p className={`text-xs md:text-sm transition-colors duration-300 ${
+        <p className={`text-sm md:text-sm transition-colors duration-300 ${
           darkMode ? 'text-gray-400' : 'text-gray-600'
         }`}>
           Stay organized and productive
@@ -913,27 +938,23 @@ const App = () => {
       </div>
       <button
         onClick={toggleDarkMode}
-        className={`p-3 md:p-4 rounded-full transition-all duration-300 transform hover:scale-110 ${
-          darkMode 
-            ? 'bg-yellow-400 text-gray-900' 
-            : 'bg-indigo-600 text-white'
-        }`}
+        className="p-4 md:p-5 rounded-full transition-all duration-300 transform hover:scale-110"
         aria-label="Toggle dark mode"
       >
         {darkMode ? (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 md:h-6 md:w-6" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
           </svg>
         ) : (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 md:h-6 md:w-6" viewBox="0 0 20 20" fill="currentColor">
             <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
           </svg>
         )}
       </button>
     </div>
-  );
+  ));
   
-  const ServerStatus = () => (
+  const ServerStatus = memo(() => (
     <div className="flex items-center justify-center mb-4">
       <div className={`h-3 w-3 rounded-full mr-2 ${
         serverStatus === 'online' ? 'bg-green-500' : 
@@ -946,9 +967,9 @@ const App = () => {
          serverStatus === 'offline' ? 'Server Offline' : 'Checking Server...'}
       </span>
     </div>
-  );
+  ));
   
-  const ProgressBar = () => {
+  const ProgressBar = memo(() => {
     const progressPercentage = calculateProgress();
     
     return (
@@ -977,9 +998,9 @@ const App = () => {
         </div>
       </div>
     );
-  };
+  });
   
-  const SearchAndFilters = () => {
+  const SearchAndFilters = memo(() => {
     return (
       <div className="mb-6 space-y-4">
         <div className="relative">
@@ -987,7 +1008,7 @@ const App = () => {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className={`w-full p-4 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
+            className={`w-full p-4 md:p-3 text-lg md:text-base rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
               darkMode 
                 ? 'bg-gray-700 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
                 : 'border border-gray-300 text-gray-900 focus:ring-indigo-500 focus:border-transparent'
@@ -1037,10 +1058,10 @@ const App = () => {
           </div>
         )}
         
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
           <button
             onClick={() => setFilter('all')}
-            className={`py-3 rounded-lg font-medium transition-all duration-300 ${
+            className={`py-4 md:py-3 rounded-lg font-medium transition-all duration-300 ${
               filter === 'all' 
                 ? (darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white')
                 : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
@@ -1050,7 +1071,7 @@ const App = () => {
           </button>
           <button
             onClick={() => setFilter('active')}
-            className={`py-3 rounded-lg font-medium transition-all duration-300 ${
+            className={`py-4 md:py-3 rounded-lg font-medium transition-all duration-300 ${
               filter === 'active' 
                 ? (darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white')
                 : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
@@ -1060,7 +1081,7 @@ const App = () => {
           </button>
           <button
             onClick={() => setFilter('completed')}
-            className={`py-3 rounded-lg font-medium transition-all duration-300 ${
+            className={`py-4 md:py-3 rounded-lg font-medium transition-all duration-300 ${
               filter === 'completed' 
                 ? (darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white')
                 : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
@@ -1072,7 +1093,7 @@ const App = () => {
         
         <button
           onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-          className={`w-full py-3 rounded-lg font-medium transition-all duration-300 flex items-center justify-center ${
+          className={`w-full py-4 md:py-3 rounded-lg font-medium transition-all duration-300 flex items-center justify-center ${
             darkMode 
               ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -1097,7 +1118,7 @@ const App = () => {
                   <button
                     key={p}
                     onClick={() => setPriorityFilter(priorityFilter === p ? 'all' : p)}
-                    className={`py-2 rounded-lg font-medium transition-all duration-300 ${
+                    className={`py-3 rounded-lg font-medium transition-all duration-300 ${
                       priorityFilter === p 
                         ? (darkMode ? `bg-${p === 'high' ? 'red' : p === 'medium' ? 'yellow' : 'green'}-600 text-white` : `bg-${p === 'high' ? 'red' : p === 'medium' ? 'yellow' : 'green'}-600 text-white`)
                         : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
@@ -1124,7 +1145,7 @@ const App = () => {
                     <button
                       key={d}
                       onClick={() => setDateFilter(dateFilter === d ? 'all' : d)}
-                      className={`py-2 rounded-lg font-medium transition-all duration-300 ${
+                      className={`py-3 rounded-lg font-medium transition-all duration-300 ${
                         dateFilter === d 
                           ? (darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white')
                           : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
@@ -1140,13 +1161,13 @@ const App = () => {
         )}
       </div>
     );
-  };
+  });
   
-  const TaskTemplatesButton = () => (
+  const TaskTemplatesButton = memo(() => (
     <div className="mb-6">
       <button
         onClick={() => setShowTemplates(true)}
-        className={`w-full py-3 rounded-lg font-medium transition-all duration-300 flex items-center justify-center ${
+        className={`w-full py-4 md:py-3 rounded-lg font-medium transition-all duration-300 flex items-center justify-center ${
           darkMode 
             ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -1158,9 +1179,9 @@ const App = () => {
         Use Task Template
       </button>
     </div>
-  );
+  ));
   
-  const AddTaskForm = () => (
+  const AddTaskForm = memo(() => (
     showAddForm && (
       <div className="mb-6 p-4 rounded-xl transition-all duration-300">
         <h3 className={`font-medium mb-3 ${
@@ -1170,10 +1191,11 @@ const App = () => {
         </h3>
         <div className="space-y-4">
           <input
+            ref={newTaskInputRef}
             type="text"
             value={newTask}
             onChange={(e) => setNewTask(e.target.value)}
-            className={`w-full p-4 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
+            className={`w-full p-4 md:p-3 text-lg md:text-base rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
               darkMode 
                 ? 'bg-gray-700 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
                 : 'border border-gray-300 text-gray-900 focus:ring-indigo-500 focus:border-transparent'
@@ -1193,7 +1215,7 @@ const App = () => {
                 type="datetime-local"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className={`w-full p-3 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
+                className={`w-full p-4 md:p-3 text-lg md:text-base rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
                   darkMode 
                     ? 'bg-gray-700 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
                     : 'border border-gray-300 text-gray-900 focus:ring-indigo-500 focus:border-transparent'
@@ -1207,7 +1229,7 @@ const App = () => {
               }`}>
                 Priority
               </label>
-              <div className="flex space-x-4">
+              <div className="flex justify-between space-x-2">
                 {['high', 'medium', 'low'].map((p) => (
                   <label key={p} className="flex items-center">
                     <input
@@ -1242,7 +1264,7 @@ const App = () => {
           <button
             onClick={handleAdd}
             disabled={isAddingTask}
-            className={`w-full p-4 rounded-lg transition-all duration-300 flex items-center justify-center transform hover:scale-105 ${
+            className={`w-full p-4 md:p-3 rounded-lg transition-all duration-300 flex items-center justify-center transform hover:scale-105 ${
               isAddingTask 
                 ? 'bg-indigo-400 cursor-not-allowed' 
                 : 'bg-indigo-600 text-white hover:bg-indigo-700'
@@ -1268,12 +1290,13 @@ const App = () => {
         </div>
       </div>
     )
-  );
+  ));
   
-  const EditTaskForm = () => (
+  const EditTaskForm = memo(() => (
     editId && (
       <div 
         id="edit-section"
+        ref={editSectionRef}
         className={`mb-6 p-4 rounded-xl border-l-4 transition-all duration-500 ${
           darkMode 
             ? 'bg-gray-700 border-indigo-500' 
@@ -1292,10 +1315,11 @@ const App = () => {
         </h3>
         <div className="space-y-4">
           <input
+            ref={editTaskInputRef}
             type="text"
             value={editTask}
             onChange={(e) => setEditTask(e.target.value)}
-            className={`w-full p-4 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
+            className={`w-full p-4 md:p-3 text-lg md:text-base rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
               darkMode 
                 ? 'bg-gray-700 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
                 : 'border border-indigo-300 text-gray-900 focus:ring-indigo-500 focus:border-transparent bg-white'
@@ -1316,7 +1340,7 @@ const App = () => {
                 type="datetime-local"
                 value={editDueDate}
                 onChange={(e) => setEditDueDate(e.target.value)}
-                className={`w-full p-3 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
+                className={`w-full p-4 md:p-3 text-lg md:text-base rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
                   darkMode 
                     ? 'bg-gray-700 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
                     : 'border border-indigo-300 text-gray-900 focus:ring-indigo-500 focus:border-transparent bg-white'
@@ -1330,7 +1354,7 @@ const App = () => {
               }`}>
                 Priority
               </label>
-              <div className="flex space-x-4">
+              <div className="flex justify-between space-x-2">
                 {['high', 'medium', 'low'].map((p) => (
                   <label key={p} className="flex items-center">
                     <input
@@ -1365,13 +1389,13 @@ const App = () => {
           <div className="flex space-x-3">
             <button
               onClick={handleUpdate}
-              className="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-all duration-300 font-medium transform hover:scale-[1.02]"
+              className="flex-1 bg-green-600 text-white py-4 md:py-3 rounded-lg hover:bg-green-700 transition-all duration-300 font-medium transform hover:scale-[1.02]"
             >
               Save Changes
             </button>
             <button
               onClick={cancelEdit}
-              className="flex-1 bg-gray-500 text-white py-3 rounded-lg hover:bg-gray-600 transition-all duration-300 font-medium transform hover:scale-[1.02]"
+              className="flex-1 bg-gray-500 text-white py-4 md:py-3 rounded-lg hover:bg-gray-600 transition-all duration-300 font-medium transform hover:scale-[1.02]"
             >
               Cancel
             </button>
@@ -1379,9 +1403,9 @@ const App = () => {
         </div>
       </div>
     )
-  );
+  ));
   
-  const TaskList = () => {
+  const TaskList = memo(() => {
     const taskGroups = groupTasksByDate(sortedTodos);
     
     return (
@@ -1418,7 +1442,7 @@ const App = () => {
                 <div key={sectionName} className="mb-4">
                   <button 
                     onClick={() => toggleSection(sectionName)}
-                    className="flex items-center w-full p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
+                    className="flex items-center w-full p-3 md:p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-2 transition-transform duration-300 ${expandedSections[sectionName] ? 'rotate-90' : ''}`} viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
@@ -1438,12 +1462,12 @@ const App = () => {
         )}
       </div>
     );
-  };
+  });
   
-  const Modal = () => {
+  const Modal = memo(() => {
     if (!isModalOpen || !modalContent) return null;
     return createPortal(
-      <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+      <div className="fixed inset-0 flex items-center justify-center z-50 p-4 md:p-4">
         <div 
           className={`absolute inset-0 bg-black backdrop-blur-sm transition-opacity duration-400 ${
             isModalOpen ? 'bg-opacity-60' : 'bg-opacity-0'
@@ -1451,7 +1475,7 @@ const App = () => {
           onClick={closeModal}
         ></div>
         
-        <div className={`relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 w-full max-w-md mx-4 transform transition-all duration-400 ${modalAnimation}`}>
+        <div className={`relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-6 w-full max-w-md mx-4 transform transition-all duration-400 ${modalAnimation}`}>
           <div className="text-center">
             <div className="mb-6 flex justify-center">
               {modalContent.icon}
@@ -1463,7 +1487,7 @@ const App = () => {
                 <button
                   key={index}
                   onClick={action.onClick}
-                  className={`px-6 py-3 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 ${
+                  className={`px-6 py-4 md:py-3 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 ${
                     action.primary 
                       ? action.danger 
                         ? 'bg-red-600 text-white hover:bg-red-700 shadow-md' 
@@ -1480,9 +1504,9 @@ const App = () => {
       </div>,
       document.body
     );
-  };
+  });
   
-  const TemplatesModal = () => {
+  const TemplatesModal = memo(() => {
     if (!showTemplates) return null;
     
     return createPortal(
@@ -1532,7 +1556,7 @@ const App = () => {
       </div>,
       document.body
     );
-  };
+  });
   
   return (
     <div className={`min-h-screen transition-colors duration-300 ${
@@ -1853,4 +1877,5 @@ const App = () => {
     </div>
   );
 };
+
 export default App;
