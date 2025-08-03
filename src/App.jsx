@@ -18,10 +18,8 @@ const App = () => {
   const [editDueDate, setEditDueDate] = useState('');
   const [editPriority, setEditPriority] = useState('medium');
   const [showAddForm, setShowAddForm] = useState(true);
-  //Fixed API URL to use environment variable typo =='https://todo-server-mogodb.onrender.com'===
-  const API_URL = import.meta.env.VITE_API_URL || 'https://todo-server-mongodb.onrender.com';
   
-  // Use ref to store the todo ID to delete
+  const API_URL = import.meta.env.VITE_API_URL || 'https://todo-server-mongodb.onrender.com';
   const todoToDeleteRef = useRef(null);
   
   // Check for dark mode preference in localStorage
@@ -241,6 +239,9 @@ const App = () => {
       const now = new Date();
       const formattedDate = now.toISOString().slice(0, 16);
       setDueDate(formattedDate);
+      
+      // Show success message
+      showModal('success', 'Task added successfully!');
     } catch (error) {
       console.error('Error adding todo:', error);
       // If server fails, save to local storage only
@@ -285,7 +286,8 @@ const App = () => {
     try {
       console.log(`Updating todo with ID: ${editId}`);
       
-      const response = await fetch(`${API_URL}/todos:${editId}`, {
+      // FIXED: Changed URL format from /todos:${editId} to /todos/${editId}
+      const response = await fetch(`${API_URL}/todos/${editId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -318,6 +320,9 @@ const App = () => {
       setEditDueDate('');
       setEditPriority('medium');
       setShowAddForm(true);
+      
+      // Show success message
+      showModal('success', 'Task updated successfully!');
     } catch (error) {
       console.error('Error updating todo:', error);
       
@@ -397,7 +402,8 @@ const App = () => {
       
       console.log(`Converted ID: ${deleteId}, type: ${typeof deleteId}`);
       
-      const response = await fetch(`${API_URL}/todos:${deleteId}`, {
+      // FIXED: Changed URL format from /todos:${deleteId} to /todos/${deleteId}
+      const response = await fetch(`${API_URL}/todos/${deleteId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -837,7 +843,7 @@ const App = () => {
                 onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
               />
               
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className={`block text-sm font-medium mb-1 ${
                     darkMode ? 'text-gray-300' : 'text-gray-700'
@@ -926,7 +932,7 @@ const App = () => {
                 onKeyDown={(e) => e.key === 'Enter' && handleUpdate()}
               />
               
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className={`block text-sm font-medium mb-1 ${
                     darkMode ? 'text-gray-300' : 'text-gray-700'
@@ -1047,7 +1053,7 @@ const App = () => {
                           {capitalizeFirstWord(todo.task)}
                         </span>
                         
-                        <div className="flex items-center mt-2 space-x-3">
+                        <div className="flex flex-wrap items-center mt-2 gap-2">
                           {todo.dueDate && (
                             <div className={`flex items-center text-xs ${
                               isOverdue(todo.dueDate) && !todo.completed
@@ -1160,6 +1166,17 @@ const App = () => {
         
         .dark ::-webkit-scrollbar-thumb:hover {
           background: #6B7280;
+        }
+        
+        /* Mobile responsiveness improvements */
+        @media (max-width: 640px) {
+          .grid {
+            grid-template-columns: 1fr;
+          }
+          
+          input[type="datetime-local"] {
+            font-size: 14px;
+          }
         }
       `}</style>
     </div>
