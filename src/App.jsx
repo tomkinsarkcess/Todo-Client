@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-// Main App Component
+
 const App = () => {
   const [todos, setTodos] = useState([]);
   const [newTask, setNewTask] = useState('');
@@ -31,9 +31,6 @@ const App = () => {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [activeFilters, setActiveFilters] = useState([]);
   
-  // Keyboard shortcuts
-  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
-  
   // Task templates
   const [showTemplates, setShowTemplates] = useState(false);
   const taskTemplates = [
@@ -57,46 +54,9 @@ const App = () => {
   const API_URL = import.meta.env.VITE_API_URL || 'https://todo-server-mongodb.onrender.com';
   const todoToDeleteRef = useRef(null);
   
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-      
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        document.querySelector('input[placeholder="Search tasks..."]')?.focus();
-      }
-      
-      if (e.key === 'n') {
-        e.preventDefault();
-        if (!showAddForm) setShowAddForm(true);
-        document.querySelector('input[placeholder="What needs to be done?"]')?.focus();
-      }
-      
-      if (e.key === 'd') {
-        e.preventDefault();
-        toggleDarkMode();
-      }
-      
-      if (e.key === '/') {
-        e.preventDefault();
-        setShowShortcutsHelp(!showShortcutsHelp);
-      }
-      
-      if (e.key === 't') {
-        e.preventDefault();
-        setShowTemplates(!showTemplates);
-      }
-      
-      if (e.key === 'f') {
-        e.preventDefault();
-        setShowAdvancedFilters(!showAdvancedFilters);
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showAddForm, showShortcutsHelp, showTemplates, showAdvancedFilters]);
+  // Refs for input elements
+  const newTaskInputRef = useRef(null);
+  const searchInputRef = useRef(null);
   
   // Dark mode
   useEffect(() => {
@@ -262,7 +222,6 @@ const App = () => {
       return;
     }
     
-    // Show loading state
     setIsAddingTask(true);
     
     const newTodo = {
@@ -275,7 +234,6 @@ const App = () => {
       createdAt: new Date().toISOString()
     };
     
-    // Add to UI immediately for better UX
     const updatedTodos = [...todos, newTodo];
     setTodos(updatedTodos);
     saveTodosToLocalStorage(updatedTodos);
@@ -283,7 +241,6 @@ const App = () => {
     setNewTaskId(newTodo.id);
     setTimeout(() => setNewTaskId(null), 1000);
     
-    // Reset form
     setNewTask('');
     setPriority('medium');
     const now = new Date();
@@ -299,7 +256,6 @@ const App = () => {
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
       
       const savedTodo = await response.json();
-      // Replace the temporary todo with the server one
       const finalTodos = updatedTodos.map(todo => 
         todo.id === newTodo.id ? savedTodo : todo
       );
@@ -422,13 +378,9 @@ const App = () => {
         return;
       }
       
-      // Set animation first
       setDeletedTaskId(deleteId);
-      
-      // Close modal immediately after setting animation
       closeModal();
       
-      // Wait for animation to complete before deleting
       setTimeout(async () => {
         try {
           const response = await fetch(`${API_URL}/todos/${deleteId}`, {
@@ -476,7 +428,7 @@ const App = () => {
           
           showModal('error', `${userMessage} Deleted locally only.`);
         }
-      }, 300); // Match animation duration
+      }, 300);
     } catch (error) {
       console.error('Error in confirmDelete:', error);
       closeModal();
@@ -676,7 +628,7 @@ const App = () => {
     setShowTemplates(false);
     
     setTimeout(() => {
-      document.querySelector('input[placeholder="What needs to be done?"]')?.focus();
+      newTaskInputRef.current?.focus();
     }, 100);
   };
   
@@ -856,7 +808,7 @@ const App = () => {
           <div className="flex items-start">
             <button
               onClick={() => toggleTaskCompletion(todo.id)}
-              className={`mr-3 flex items-center justify-center w-6 h-6 rounded-full border-2 transition-all duration-300 mt-1 ${
+              className={`mr-3 flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-300 mt-1 ${
                 todo.completed 
                   ? (darkMode ? 'bg-green-500 border-green-500' : 'bg-green-500 border-green-500')
                   : (darkMode ? 'border-gray-400 hover:border-gray-300' : 'border-gray-300 hover:border-gray-400')
@@ -864,7 +816,7 @@ const App = () => {
               aria-label={todo.completed ? 'Mark as incomplete' : 'Mark as complete'}
             >
               {todo.completed && (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
               )}
@@ -910,7 +862,7 @@ const App = () => {
                 )}
                 
                 <div className="flex items-center">
-                  <span className={`inline-block w-2 h-2 rounded-full mr-1 ${getPriorityColor(todo.priority)}`}></span>
+                  <span className={`inline-block w-3 h-3 rounded-full mr-1 ${getPriorityColor(todo.priority)}`}></span>
                   <span className={`text-xs ${
                     darkMode ? 'text-gray-400' : 'text-gray-500'
                   }`}>
@@ -924,27 +876,27 @@ const App = () => {
           <div className="flex space-x-2 flex-shrink-0">
             <button
               onClick={() => handleEdit(todo)}
-              className={`p-2 rounded-lg transition-all duration-300 transform hover:scale-110 ${
+              className={`p-3 rounded-lg transition-all duration-300 transform hover:scale-110 ${
                 darkMode 
                   ? 'bg-yellow-900 text-yellow-300 hover:bg-yellow-800' 
                   : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
               }`}
               aria-label="Edit task"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
               </svg>
             </button>
             <button
               onClick={() => handleDelete(todo.id)}
-              className={`p-2 rounded-lg transition-all duration-300 transform hover:scale-110 ${
+              className={`p-3 rounded-lg transition-all duration-300 transform hover:scale-110 ${
                 darkMode 
                   ? 'bg-red-900 text-red-300 hover:bg-red-800' 
                   : 'bg-red-100 text-red-700 hover:bg-red-200'
               }`}
               aria-label="Delete task"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
             </button>
@@ -969,7 +921,7 @@ const App = () => {
       </div>
       <button
         onClick={toggleDarkMode}
-        className={`p-2 md:p-3 rounded-full transition-all duration-300 transform hover:scale-110 ${
+        className={`p-3 md:p-4 rounded-full transition-all duration-300 transform hover:scale-110 ${
           darkMode 
             ? 'bg-yellow-400 text-gray-900' 
             : 'bg-indigo-600 text-white'
@@ -977,11 +929,11 @@ const App = () => {
         aria-label="Toggle dark mode"
       >
         {darkMode ? (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
           </svg>
         ) : (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
             <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
           </svg>
         )}
@@ -1043,7 +995,8 @@ const App = () => {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className={`w-full p-3 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
+            ref={searchInputRef}
+            className={`w-full p-4 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
               darkMode 
                 ? 'bg-gray-700 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
                 : 'border border-gray-300 text-gray-900 focus:ring-indigo-500 focus:border-transparent'
@@ -1053,9 +1006,9 @@ const App = () => {
           {searchTerm && (
             <button
               onClick={() => setSearchTerm('')}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>
             </button>
@@ -1067,7 +1020,7 @@ const App = () => {
             {activeFilters.map((filter, index) => (
               <div 
                 key={index} 
-                className={`flex items-center px-3 py-1 rounded-full text-sm ${
+                className={`flex items-center px-3 py-2 rounded-full text-sm ${
                   darkMode ? 'bg-indigo-900 text-indigo-200' : 'bg-indigo-100 text-indigo-800'
                 }`}
               >
@@ -1076,7 +1029,7 @@ const App = () => {
                   onClick={() => removeFilter(filter.type)}
                   className="ml-2 text-current hover:text-gray-700 dark:hover:text-gray-300"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                   </svg>
                 </button>
@@ -1084,7 +1037,7 @@ const App = () => {
             ))}
             <button 
               onClick={clearAllFilters}
-              className={`text-sm px-3 py-1 rounded-full ${
+              className={`text-sm px-3 py-2 rounded-full ${
                 darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -1096,7 +1049,7 @@ const App = () => {
         <div className="flex space-x-2">
           <button
             onClick={() => setFilter('all')}
-            className={`flex-1 py-3 rounded-lg font-medium transition-all duration-300 ${
+            className={`flex-1 py-4 rounded-lg font-medium transition-all duration-300 ${
               filter === 'all' 
                 ? (darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white')
                 : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
@@ -1106,7 +1059,7 @@ const App = () => {
           </button>
           <button
             onClick={() => setFilter('active')}
-            className={`flex-1 py-3 rounded-lg font-medium transition-all duration-300 ${
+            className={`flex-1 py-4 rounded-lg font-medium transition-all duration-300 ${
               filter === 'active' 
                 ? (darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white')
                 : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
@@ -1116,7 +1069,7 @@ const App = () => {
           </button>
           <button
             onClick={() => setFilter('completed')}
-            className={`flex-1 py-3 rounded-lg font-medium transition-all duration-300 ${
+            className={`flex-1 py-4 rounded-lg font-medium transition-all duration-300 ${
               filter === 'completed' 
                 ? (darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white')
                 : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
@@ -1128,20 +1081,20 @@ const App = () => {
         
         <button
           onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-          className={`w-full py-3 rounded-lg font-medium transition-all duration-300 flex items-center justify-center ${
+          className={`w-full py-4 rounded-lg font-medium transition-all duration-300 flex items-center justify-center ${
             darkMode 
               ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
           }`}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-1 transition-transform duration-300 ${showAdvancedFilters ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 mr-1 transition-transform duration-300 ${showAdvancedFilters ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
           </svg>
           Advanced Filters
         </button>
         
         {showAdvancedFilters && (
-          <div className="space-y-3 p-3 rounded-lg border border-gray-300 dark:border-gray-600 transition-all duration-300">
+          <div className="space-y-3 p-4 rounded-lg border border-gray-300 dark:border-gray-600 transition-all duration-300">
             <div>
               <label className={`block text-sm font-medium mb-1 ${
                 darkMode ? 'text-gray-300' : 'text-gray-700'
@@ -1202,13 +1155,13 @@ const App = () => {
     <div className="mb-6">
       <button
         onClick={() => setShowTemplates(true)}
-        className={`w-full py-3 rounded-lg font-medium transition-all duration-300 flex items-center justify-center ${
+        className={`w-full py-4 rounded-lg font-medium transition-all duration-300 flex items-center justify-center ${
           darkMode 
             ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
         }`}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-1" viewBox="0 0 20 20" fill="currentColor">
           <path d="M5 4a1 1 0 00-2 0v7.268a2 2 0 000 3.464V16a1 1 0 102 0v-1.268a2 2 0 000-3.464V4zM11 4a1 1 0 10-2 0v1.268a2 2 0 000 3.464V16a1 1 0 102 0V8.732a2 2 0 000-3.464V4zM16 3a1 1 0 011 1v7.268a2 2 0 010 3.464V16a1 1 0 11-2 0v-1.268a2 2 0 010-3.464V4a1 1 0 011-1z" />
         </svg>
         Use Task Template
@@ -1229,7 +1182,8 @@ const App = () => {
             type="text"
             value={newTask}
             onChange={(e) => setNewTask(e.target.value)}
-            className={`w-full p-3 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
+            ref={newTaskInputRef}
+            className={`w-full p-4 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
               darkMode 
                 ? 'bg-gray-700 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
                 : 'border border-gray-300 text-gray-900 focus:ring-indigo-500 focus:border-transparent'
@@ -1249,7 +1203,7 @@ const App = () => {
                 type="datetime-local"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className={`w-full p-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
+                className={`w-full p-3 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
                   darkMode 
                     ? 'bg-gray-700 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
                     : 'border border-gray-300 text-gray-900 focus:ring-indigo-500 focus:border-transparent'
@@ -1276,7 +1230,7 @@ const App = () => {
                     />
                     <div 
                       onClick={() => setPriority(p)}
-                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center cursor-pointer transition-colors duration-200 ${
+                      className={`w-8 h-8 rounded-full border-2 flex items-center justify-center cursor-pointer transition-colors duration-200 ${
                         priority === p 
                           ? (p === 'high' ? 'border-red-500 bg-red-500' : 
                              p === 'medium' ? 'border-yellow-500 bg-yellow-500' : 
@@ -1285,7 +1239,7 @@ const App = () => {
                       }`}
                     >
                       {priority === p && (
-                        <div className="w-3 h-3 rounded-full bg-white"></div>
+                        <div className="w-4 h-4 rounded-full bg-white"></div>
                       )}
                     </div>
                     <span className="ml-1 text-sm capitalize">{p}</span>
@@ -1298,7 +1252,7 @@ const App = () => {
           <button
             onClick={handleAdd}
             disabled={isAddingTask}
-            className={`w-full p-3 rounded-lg transition-all duration-300 flex items-center justify-center transform hover:scale-105 ${
+            className={`w-full p-4 rounded-lg transition-all duration-300 flex items-center justify-center transform hover:scale-105 ${
               isAddingTask 
                 ? 'bg-indigo-400 cursor-not-allowed' 
                 : 'bg-indigo-600 text-white hover:bg-indigo-700'
@@ -1306,7 +1260,7 @@ const App = () => {
           >
             {isAddingTask ? (
               <>
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
@@ -1314,7 +1268,7 @@ const App = () => {
               </>
             ) : (
               <>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-1" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
                 </svg>
                 Add Task
@@ -1341,7 +1295,7 @@ const App = () => {
         <h3 className={`font-medium mb-3 flex items-center ${
           darkMode ? 'text-indigo-300' : 'text-indigo-800'
         }`}>
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-1" viewBox="0 0 20 20" fill="currentColor">
             <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
           </svg>
           Editing Task
@@ -1351,7 +1305,7 @@ const App = () => {
             type="text"
             value={editTask}
             onChange={(e) => setEditTask(e.target.value)}
-            className={`w-full p-3 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
+            className={`w-full p-4 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
               darkMode 
                 ? 'bg-gray-700 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
                 : 'border border-indigo-300 text-gray-900 focus:ring-indigo-500 focus:border-transparent bg-white'
@@ -1372,7 +1326,7 @@ const App = () => {
                 type="datetime-local"
                 value={editDueDate}
                 onChange={(e) => setEditDueDate(e.target.value)}
-                className={`w-full p-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
+                className={`w-full p-3 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
                   darkMode 
                     ? 'bg-gray-700 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
                     : 'border border-indigo-300 text-gray-900 focus:ring-indigo-500 focus:border-transparent bg-white'
@@ -1399,7 +1353,7 @@ const App = () => {
                     />
                     <div 
                       onClick={() => setEditPriority(p)}
-                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center cursor-pointer transition-colors duration-200 ${
+                      className={`w-8 h-8 rounded-full border-2 flex items-center justify-center cursor-pointer transition-colors duration-200 ${
                         editPriority === p 
                           ? (p === 'high' ? 'border-red-500 bg-red-500' : 
                              p === 'medium' ? 'border-yellow-500 bg-yellow-500' : 
@@ -1408,7 +1362,7 @@ const App = () => {
                       }`}
                     >
                       {editPriority === p && (
-                        <div className="w-3 h-3 rounded-full bg-white"></div>
+                        <div className="w-4 h-4 rounded-full bg-white"></div>
                       )}
                     </div>
                     <span className="ml-1 text-sm capitalize">{p}</span>
@@ -1421,13 +1375,13 @@ const App = () => {
           <div className="flex space-x-3">
             <button
               onClick={handleUpdate}
-              className="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-all duration-300 font-medium transform hover:scale-[1.02]"
+              className="flex-1 bg-green-600 text-white py-4 rounded-lg hover:bg-green-700 transition-all duration-300 font-medium transform hover:scale-[1.02]"
             >
               Save Changes
             </button>
             <button
               onClick={cancelEdit}
-              className="flex-1 bg-gray-500 text-white py-3 rounded-lg hover:bg-gray-600 transition-all duration-300 font-medium transform hover:scale-[1.02]"
+              className="flex-1 bg-gray-500 text-white py-4 rounded-lg hover:bg-gray-600 transition-all duration-300 font-medium transform hover:scale-[1.02]"
             >
               Cancel
             </button>
@@ -1444,7 +1398,7 @@ const App = () => {
       <div className="space-y-3 max-h-96 overflow-y-auto pr-2 transition-all duration-300">
         {sortedTodos.length === 0 ? (
           <div className="text-center py-8 transition-all duration-500">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
             <p className={darkMode ? 'text-gray-400' : 'text-gray-500'}>
@@ -1474,9 +1428,9 @@ const App = () => {
                 <div key={sectionName} className="mb-4">
                   <button 
                     onClick={() => toggleSection(sectionName)}
-                    className="flex items-center w-full p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
+                    className="flex items-center w-full p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-2 transition-transform duration-300 ${expandedSections[sectionName] ? 'rotate-90' : ''}`} viewBox="0 0 20 20" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 mr-2 transition-transform duration-300 ${expandedSections[sectionName] ? 'rotate-90' : ''}`} viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                     </svg>
                     <span className={`font-medium ${sectionColor}`}>{sectionTitle} ({tasks.length})</span>
@@ -1495,19 +1449,6 @@ const App = () => {
       </div>
     );
   };
-  
-  const KeyboardShortcutsHint = () => (
-    <div className="mt-4 text-center">
-      <button
-        onClick={() => setShowShortcutsHelp(true)}
-        className={`text-sm ${
-          darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
-        }`}
-      >
-        Press / for keyboard shortcuts
-      </button>
-    </div>
-  );
   
   const Modal = () => {
     if (!isModalOpen || !modalContent) return null;
@@ -1532,7 +1473,7 @@ const App = () => {
                 <button
                   key={index}
                   onClick={action.onClick}
-                  className={`px-6 py-3 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 ${
+                  className={`px-6 py-4 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 ${
                     action.primary 
                       ? action.danger 
                         ? 'bg-red-600 text-white hover:bg-red-700 shadow-md' 
@@ -1543,61 +1484,6 @@ const App = () => {
                   {action.label}
                 </button>
               ))}
-            </div>
-          </div>
-        </div>
-      </div>,
-      document.body
-    );
-  };
-  
-  const ShortcutsHelpModal = () => {
-    if (!showShortcutsHelp) return null;
-    
-    return createPortal(
-      <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-        <div 
-          className="absolute inset-0 bg-black backdrop-blur-sm transition-opacity duration-400 bg-opacity-60"
-          onClick={() => setShowShortcutsHelp(false)}
-        ></div>
-        
-        <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 w-full max-w-md mx-4 transform transition-all duration-400">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold text-gray-800 dark:text-white">Keyboard Shortcuts</h3>
-            <button 
-              onClick={() => setShowShortcutsHelp(false)}
-              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          
-          <div className="space-y-3">
-            <div className="flex justify-between items-center py-3 border-b border-gray-200 dark:border-gray-700">
-              <span className="text-gray-700 dark:text-gray-300">Focus search</span>
-              <span className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded text-sm font-mono">Ctrl/Cmd + K</span>
-            </div>
-            <div className="flex justify-between items-center py-3 border-b border-gray-200 dark:border-gray-700">
-              <span className="text-gray-700 dark:text-gray-300">Add new task</span>
-              <span className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded text-sm font-mono">N</span>
-            </div>
-            <div className="flex justify-between items-center py-3 border-b border-gray-200 dark:border-gray-700">
-              <span className="text-gray-700 dark:text-gray-300">Toggle dark mode</span>
-              <span className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded text-sm font-mono">D</span>
-            </div>
-            <div className="flex justify-between items-center py-3 border-b border-gray-200 dark:border-gray-700">
-              <span className="text-gray-700 dark:text-gray-300">Show shortcuts</span>
-              <span className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded text-sm font-mono">/</span>
-            </div>
-            <div className="flex justify-between items-center py-3 border-b border-gray-200 dark:border-gray-700">
-              <span className="text-gray-700 dark:text-gray-300">Show templates</span>
-              <span className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded text-sm font-mono">T</span>
-            </div>
-            <div className="flex justify-between items-center py-3">
-              <span className="text-gray-700 dark:text-gray-300">Toggle filters</span>
-              <span className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded text-sm font-mono">F</span>
             </div>
           </div>
         </div>
@@ -1677,11 +1563,9 @@ const App = () => {
         <AddTaskForm />
         <EditTaskForm />
         <TaskList />
-        <KeyboardShortcutsHint />
       </div>
       
       <Modal />
-      <ShortcutsHelpModal />
       <TemplatesModal />
       
       <style jsx>{`
@@ -1790,8 +1674,8 @@ const App = () => {
         /* Mobile-specific styles */
         @media (max-width: 640px) {
           button {
-            min-height: 44px; /* Minimum touch target size */
-            padding: 12px 16px;
+            min-height: 48px; /* Minimum touch target size */
+            padding: 16px;
           }
           
           .space-y-3 > * + * {
@@ -1806,8 +1690,8 @@ const App = () => {
           
           /* Make radio buttons larger on mobile */
           input[type="radio"] {
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
           }
           
           /* Ensure proper spacing in modals */
@@ -1817,13 +1701,13 @@ const App = () => {
           
           /* Make task items easier to tap */
           .task-item {
-            padding: 1rem;
+            padding: 1.25rem;
           }
           
           /* Make edit and delete buttons larger */
           .task-item button {
-            width: 40px;
-            height: 40px;
+            width: 48px;
+            height: 48px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1837,18 +1721,24 @@ const App = () => {
           
           /* Make form inputs larger */
           input {
-            padding: 14px;
+            padding: 16px;
             font-size: 16px; /* Prevents zoom on iOS */
           }
           
           /* Make filter buttons larger */
           .filter-buttons button {
-            padding: 14px;
+            padding: 16px;
           }
           
           /* Make section headers larger */
           .section-header {
-            padding: 14px;
+            padding: 16px;
+          }
+          
+          /* Fix dark mode toggle icon */
+          .dark-mode-toggle svg {
+            width: 24px;
+            height: 24px;
           }
         }
         
@@ -1871,14 +1761,37 @@ const App = () => {
           
           /* Make radio buttons even larger on very small screens */
           input[type="radio"] {
-            width: 24px;
-            height: 24px;
+            width: 28px;
+            height: 28px;
           }
           
           /* Make priority indicators larger */
           .priority-indicator {
-            width: 12px;
-            height: 12px;
+            width: 14px;
+            height: 14px;
+          }
+          
+          /* Make task list items more spacious */
+          .task-item {
+            padding: 1.5rem;
+          }
+          
+          /* Make buttons even larger on small screens */
+          button {
+            min-height: 52px;
+            padding: 18px;
+          }
+          
+          /* Make icons even larger */
+          svg {
+            width: 28px;
+            height: 28px;
+          }
+          
+          /* Make inputs even larger */
+          input {
+            padding: 18px;
+            font-size: 18px;
           }
         }
       `}</style>
