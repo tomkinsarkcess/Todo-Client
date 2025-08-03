@@ -54,10 +54,6 @@ const App = () => {
   const API_URL = import.meta.env.VITE_API_URL || 'https://todo-server-mongodb.onrender.com';
   const todoToDeleteRef = useRef(null);
   
-  // Refs for input elements
-  const newTaskInputRef = useRef(null);
-  const searchInputRef = useRef(null);
-  
   // Dark mode
   useEffect(() => {
     const savedDarkMode = localStorage.getItem('darkMode') === 'true';
@@ -626,10 +622,6 @@ const App = () => {
     setPriority(template.priority);
     setDueDate(formattedDate);
     setShowTemplates(false);
-    
-    setTimeout(() => {
-      newTaskInputRef.current?.focus();
-    }, 100);
   };
   
   const calculateProgress = () => {
@@ -989,13 +981,12 @@ const App = () => {
   
   const SearchAndFilters = () => {
     return (
-      <div className="mb-6 space-y-3">
+      <div className="mb-6 space-y-4">
         <div className="relative">
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            ref={searchInputRef}
             className={`w-full p-4 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
               darkMode 
                 ? 'bg-gray-700 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
@@ -1046,10 +1037,10 @@ const App = () => {
           </div>
         )}
         
-        <div className="flex space-x-2">
+        <div className="grid grid-cols-3 gap-2">
           <button
             onClick={() => setFilter('all')}
-            className={`flex-1 py-4 rounded-lg font-medium transition-all duration-300 ${
+            className={`py-3 rounded-lg font-medium transition-all duration-300 ${
               filter === 'all' 
                 ? (darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white')
                 : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
@@ -1059,7 +1050,7 @@ const App = () => {
           </button>
           <button
             onClick={() => setFilter('active')}
-            className={`flex-1 py-4 rounded-lg font-medium transition-all duration-300 ${
+            className={`py-3 rounded-lg font-medium transition-all duration-300 ${
               filter === 'active' 
                 ? (darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white')
                 : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
@@ -1069,7 +1060,7 @@ const App = () => {
           </button>
           <button
             onClick={() => setFilter('completed')}
-            className={`flex-1 py-4 rounded-lg font-medium transition-all duration-300 ${
+            className={`py-3 rounded-lg font-medium transition-all duration-300 ${
               filter === 'completed' 
                 ? (darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white')
                 : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
@@ -1081,22 +1072,22 @@ const App = () => {
         
         <button
           onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-          className={`w-full py-4 rounded-lg font-medium transition-all duration-300 flex items-center justify-center ${
+          className={`w-full py-3 rounded-lg font-medium transition-all duration-300 flex items-center justify-center ${
             darkMode 
               ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
           }`}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 mr-1 transition-transform duration-300 ${showAdvancedFilters ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-1 transition-transform duration-300 ${showAdvancedFilters ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
           </svg>
           Advanced Filters
         </button>
         
         {showAdvancedFilters && (
-          <div className="space-y-3 p-4 rounded-lg border border-gray-300 dark:border-gray-600 transition-all duration-300">
+          <div className="space-y-4 p-4 rounded-lg border border-gray-300 dark:border-gray-600 transition-all duration-300">
             <div>
-              <label className={`block text-sm font-medium mb-1 ${
+              <label className={`block text-sm font-medium mb-2 ${
                 darkMode ? 'text-gray-300' : 'text-gray-700'
               }`}>
                 Priority
@@ -1106,7 +1097,7 @@ const App = () => {
                   <button
                     key={p}
                     onClick={() => setPriorityFilter(priorityFilter === p ? 'all' : p)}
-                    className={`py-3 rounded-lg font-medium transition-all duration-300 ${
+                    className={`py-2 rounded-lg font-medium transition-all duration-300 ${
                       priorityFilter === p 
                         ? (darkMode ? `bg-${p === 'high' ? 'red' : p === 'medium' ? 'yellow' : 'green'}-600 text-white` : `bg-${p === 'high' ? 'red' : p === 'medium' ? 'yellow' : 'green'}-600 text-white`)
                         : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
@@ -1119,7 +1110,7 @@ const App = () => {
             </div>
             
             <div>
-              <label className={`block text-sm font-medium mb-1 ${
+              <label className={`block text-sm font-medium mb-2 ${
                 darkMode ? 'text-gray-300' : 'text-gray-700'
               }`}>
                 Due Date
@@ -1133,7 +1124,7 @@ const App = () => {
                     <button
                       key={d}
                       onClick={() => setDateFilter(dateFilter === d ? 'all' : d)}
-                      className={`py-3 rounded-lg font-medium transition-all duration-300 ${
+                      className={`py-2 rounded-lg font-medium transition-all duration-300 ${
                         dateFilter === d 
                           ? (darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white')
                           : (darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
@@ -1155,13 +1146,13 @@ const App = () => {
     <div className="mb-6">
       <button
         onClick={() => setShowTemplates(true)}
-        className={`w-full py-4 rounded-lg font-medium transition-all duration-300 flex items-center justify-center ${
+        className={`w-full py-3 rounded-lg font-medium transition-all duration-300 flex items-center justify-center ${
           darkMode 
             ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
         }`}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-1" viewBox="0 0 20 20" fill="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
           <path d="M5 4a1 1 0 00-2 0v7.268a2 2 0 000 3.464V16a1 1 0 102 0v-1.268a2 2 0 000-3.464V4zM11 4a1 1 0 10-2 0v1.268a2 2 0 000 3.464V16a1 1 0 102 0V8.732a2 2 0 000-3.464V4zM16 3a1 1 0 011 1v7.268a2 2 0 010 3.464V16a1 1 0 11-2 0v-1.268a2 2 0 010-3.464V4a1 1 0 011-1z" />
         </svg>
         Use Task Template
@@ -1177,12 +1168,11 @@ const App = () => {
         }`}>
           Add New Task
         </h3>
-        <div className="space-y-3">
+        <div className="space-y-4">
           <input
             type="text"
             value={newTask}
             onChange={(e) => setNewTask(e.target.value)}
-            ref={newTaskInputRef}
             className={`w-full p-4 rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
               darkMode 
                 ? 'bg-gray-700 border-gray-600 text-white focus:ring-indigo-500 focus:border-transparent' 
@@ -1192,9 +1182,9 @@ const App = () => {
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
           />
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className={`block text-sm font-medium mb-1 ${
+              <label className={`block text-sm font-medium mb-2 ${
                 darkMode ? 'text-gray-300' : 'text-gray-700'
               }`}>
                 Due Date
@@ -1212,7 +1202,7 @@ const App = () => {
             </div>
             
             <div>
-              <label className={`block text-sm font-medium mb-1 ${
+              <label className={`block text-sm font-medium mb-2 ${
                 darkMode ? 'text-gray-300' : 'text-gray-700'
               }`}>
                 Priority
@@ -1268,7 +1258,7 @@ const App = () => {
               </>
             ) : (
               <>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
                 </svg>
                 Add Task
@@ -1295,12 +1285,12 @@ const App = () => {
         <h3 className={`font-medium mb-3 flex items-center ${
           darkMode ? 'text-indigo-300' : 'text-indigo-800'
         }`}>
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-1" viewBox="0 0 20 20" fill="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
             <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
           </svg>
           Editing Task
         </h3>
-        <div className="space-y-3">
+        <div className="space-y-4">
           <input
             type="text"
             value={editTask}
@@ -1315,9 +1305,9 @@ const App = () => {
             onKeyDown={(e) => e.key === 'Enter' && handleUpdate()}
           />
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className={`block text-sm font-medium mb-1 ${
+              <label className={`block text-sm font-medium mb-2 ${
                 darkMode ? 'text-gray-300' : 'text-gray-700'
               }`}>
                 Due Date
@@ -1335,7 +1325,7 @@ const App = () => {
             </div>
             
             <div>
-              <label className={`block text-sm font-medium mb-1 ${
+              <label className={`block text-sm font-medium mb-2 ${
                 darkMode ? 'text-gray-300' : 'text-gray-700'
               }`}>
                 Priority
@@ -1375,13 +1365,13 @@ const App = () => {
           <div className="flex space-x-3">
             <button
               onClick={handleUpdate}
-              className="flex-1 bg-green-600 text-white py-4 rounded-lg hover:bg-green-700 transition-all duration-300 font-medium transform hover:scale-[1.02]"
+              className="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-all duration-300 font-medium transform hover:scale-[1.02]"
             >
               Save Changes
             </button>
             <button
               onClick={cancelEdit}
-              className="flex-1 bg-gray-500 text-white py-4 rounded-lg hover:bg-gray-600 transition-all duration-300 font-medium transform hover:scale-[1.02]"
+              className="flex-1 bg-gray-500 text-white py-3 rounded-lg hover:bg-gray-600 transition-all duration-300 font-medium transform hover:scale-[1.02]"
             >
               Cancel
             </button>
@@ -1395,7 +1385,7 @@ const App = () => {
     const taskGroups = groupTasksByDate(sortedTodos);
     
     return (
-      <div className="space-y-3 max-h-96 overflow-y-auto pr-2 transition-all duration-300">
+      <div className="space-y-4 max-h-96 overflow-y-auto pr-2 transition-all duration-300">
         {sortedTodos.length === 0 ? (
           <div className="text-center py-8 transition-all duration-500">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1428,9 +1418,9 @@ const App = () => {
                 <div key={sectionName} className="mb-4">
                   <button 
                     onClick={() => toggleSection(sectionName)}
-                    className="flex items-center w-full p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
+                    className="flex items-center w-full p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 mr-2 transition-transform duration-300 ${expandedSections[sectionName] ? 'rotate-90' : ''}`} viewBox="0 0 20 20" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-2 transition-transform duration-300 ${expandedSections[sectionName] ? 'rotate-90' : ''}`} viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                     </svg>
                     <span className={`font-medium ${sectionColor}`}>{sectionTitle} ({tasks.length})</span>
@@ -1473,7 +1463,7 @@ const App = () => {
                 <button
                   key={index}
                   onClick={action.onClick}
-                  className={`px-6 py-4 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 ${
+                  className={`px-6 py-3 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 ${
                     action.primary 
                       ? action.danger 
                         ? 'bg-red-600 text-white hover:bg-red-700 shadow-md' 
@@ -1568,259 +1558,295 @@ const App = () => {
       <Modal />
       <TemplatesModal />
       
-      <style jsx>{`
-        @keyframes fade-in {
-          0% {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0);
-          }
+      <style jsx global>{`
+        /* Base mobile-first styles */
+        * {
+          box-sizing: border-box;
         }
         
-        @keyframes fade-out {
-          0% {
-            opacity: 1;
-            transform: translateY(0);
-          }
-          100% {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-        }
-        
-        @keyframes slide-in {
-          0% {
-            opacity: 0;
-            transform: translateX(-20px);
-          }
-          100% {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-        
-        @keyframes pulse {
-          0% {
-            transform: scale(1);
-          }
-          50% {
-            transform: scale(1.05);
-          }
-          100% {
-            transform: scale(1);
-          }
-        }
-        
-        @keyframes check {
-          0% {
-            transform: scale(1);
-          }
-          50% {
-            transform: scale(1.2);
-          }
-          100% {
-            transform: scale(1);
-          }
-        }
-        
-        .animate-fade-in {
-          animation: fade-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-        }
-        
-        .animate-fade-out {
-          animation: fade-out 0.3s ease-in forwards;
-        }
-        
-        .animate-slide-in {
-          animation: slide-in 0.3s ease-out forwards;
-        }
-        
-        .animate-pulse {
-          animation: pulse 0.5s ease-in-out;
-        }
-        
-        .animate-check {
-          animation: check 0.3s ease-in-out;
-        }
-        
-        .task-item {
-          transition: all 0.3s ease;
-        }
-        
-        .task-item:hover {
-          transform: translateY(-2px);
-        }
-        
-        .dark ::-webkit-scrollbar {
-          width: 8px;
-        }
-        
-        .dark ::-webkit-scrollbar-track {
-          background: #374151;
-        }
-        
-        .dark ::-webkit-scrollbar-thumb {
-          background: #4B5563;
-          border-radius: 4px;
-        }
-        
-        .dark ::-webkit-scrollbar-thumb:hover {
-          background: #6B7280;
+        body {
+          margin: 0;
+          padding: 0;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
         }
         
         /* Mobile-specific styles */
         @media (max-width: 640px) {
-          button {
-            min-height: 48px; /* Minimum touch target size */
-            padding: 16px;
+          /* Ensure consistent touch target sizes */
+          button, .button {
+            min-height: 44px;
+            min-width: 44px;
+            padding: 12px 16px;
+            font-size: 16px;
           }
           
-          .space-y-3 > * + * {
-            margin-top: 0.75rem;
+          /* Input field improvements */
+          input, textarea, select {
+            font-size: 16px;
+            padding: 14px;
+            width: 100%;
+            border-radius: 8px;
           }
           
-          .truncate {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+          /* Radio button improvements */
+          .radio-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
           }
           
-          /* Make radio buttons smaller on mobile */
-          input[type="radio"] {
+          .radio-container input[type="radio"] {
             width: 20px;
             height: 20px;
+            margin-right: 8px;
           }
           
-          /* Make task items more spacious */
+          /* Task item improvements */
           .task-item {
-            padding: 1.25rem;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-radius: 12px;
           }
           
-          /* Make edit and delete buttons larger */
           .task-item button {
-            width: 48px;
-            height: 48px;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
           }
           
-          /* Make icons larger */
+          .task-item svg {
+            width: 20px;
+            height: 20px;
+          }
+          
+          /* Icon sizing */
           svg {
             width: 20px;
             height: 20px;
           }
           
-          /* Make form inputs larger */
-          input {
-            padding: 16px;
-            font-size: 16px; /* Prevents zoom on iOS */
+          /* Dark mode toggle */
+          .dark-mode-toggle {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
           }
           
-          /* Make filter buttons larger */
-          .filter-buttons button {
-            padding: 16px;
-          }
-          
-          /* Make section headers larger */
-          .section-header {
-            padding: 16px;
-          }
-          
-          /* Fix dark mode toggle icon */
           .dark-mode-toggle svg {
             width: 24px;
             height: 24px;
           }
           
-          /* Make priority indicators properly sized */
+          /* Priority indicators */
           .priority-indicator {
             width: 12px;
             height: 12px;
+            border-radius: 50%;
+            display: inline-block;
           }
           
-          /* Improve task list spacing */
+          /* Modal improvements */
+          .modal-content {
+            padding: 20px;
+            border-radius: 16px;
+            max-width: 90%;
+            margin: 0 auto;
+          }
+          
+          /* Section headers */
+          .section-header {
+            padding: 14px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+          }
+          
+          /* Task list improvements */
+          .task-list {
+            padding: 8px;
+          }
+          
           .task-list-item {
-            margin-bottom: 1rem;
+            margin-bottom: 12px;
           }
           
-          /* Make task text more readable */
+          /* Spacing improvements */
+          .space-y-3 > * + * {
+            margin-top: 12px;
+          }
+          
+          .space-y-4 > * + * {
+            margin-top: 16px;
+          }
+          
+          /* Text improvements */
           .task-text {
             font-size: 16px;
             line-height: 1.5;
+            word-break: break-word;
           }
           
-          /* Make task details more spacious */
           .task-details {
-            margin-top: 0.75rem;
-            gap: 0.75rem;
+            font-size: 14px;
+            margin-top: 8px;
+          }
+          
+          /* Filter buttons */
+          .filter-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+          }
+          
+          .filter-buttons button {
+            padding: 12px;
+            border-radius: 8px;
+          }
+          
+          /* Advanced filters */
+          .advanced-filters {
+            padding: 16px;
+            border-radius: 12px;
+          }
+          
+          .advanced-filters .grid {
+            gap: 8px;
+          }
+          
+          /* Progress bar */
+          .progress-bar {
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+          }
+          
+          /* Search input */
+          .search-container {
+            position: relative;
+          }
+          
+          .search-container button {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+          }
+          
+          /* Empty state */
+          .empty-state {
+            padding: 32px 16px;
+            text-align: center;
+          }
+          
+          .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+          }
+          
+          /* Animations */
+          @keyframes fade-in {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          
+          @keyframes fade-out {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(10px); }
+          }
+          
+          @keyframes slide-in {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+          }
+          
+          @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+          }
+          
+          .animate-fade-in {
+            animation: fade-in 0.3s ease-out forwards;
+          }
+          
+          .animate-fade-out {
+            animation: fade-out 0.3s ease-in forwards;
+          }
+          
+          .animate-slide-in {
+            animation: slide-in 0.3s ease-out forwards;
+          }
+          
+          .animate-pulse {
+            animation: pulse 0.5s ease-in-out;
+          }
+          
+          /* Dark mode scrollbar */
+          .dark ::-webkit-scrollbar {
+            width: 6px;
+          }
+          
+          .dark ::-webkit-scrollbar-track {
+            background: #374151;
+          }
+          
+          .dark ::-webkit-scrollbar-thumb {
+            background: #4B5563;
+            border-radius: 3px;
+          }
+          
+          .dark ::-webkit-scrollbar-thumb:hover {
+            background: #6B7280;
           }
         }
         
+        /* Small mobile adjustments */
         @media (max-width: 480px) {
-          .p-4 {
-            padding: 1rem;
+          button, .button {
+            min-height: 48px;
+            padding: 14px 18px;
           }
           
-          h1 {
-            font-size: 1.5rem;
+          input, textarea, select {
+            padding: 16px;
           }
           
-          .flex.space-x-3 {
-            gap: 0.5rem;
-          }
-          
-          .flex.space-x-3 button {
-            flex: 1;
-          }
-          
-          /* Make radio buttons even smaller on very small screens */
-          input[type="radio"] {
-            width: 18px;
-            height: 18px;
-          }
-          
-          /* Make priority indicators smaller */
-          .priority-indicator {
-            width: 10px;
-            height: 10px;
-          }
-          
-          /* Make task list items more spacious */
           .task-item {
-            padding: 1.5rem;
-          }
-          
-          /* Make buttons even larger on small screens */
-          button {
-            min-height: 52px;
             padding: 18px;
           }
           
-          /* Make icons even larger */
-          svg {
-            width: 18px;
-            height: 18px;
+          .task-item button {
+            width: 44px;
+            height: 44px;
           }
           
-          /* Make inputs even larger */
-          input {
-            padding: 18px;
-            font-size: 18px;
+          .task-item svg {
+            width: 22px;
+            height: 22px;
           }
           
-          /* Make task text larger */
-          .task-text {
-            font-size: 18px;
+          .modal-content {
+            padding: 16px;
           }
           
-          /* Make task details more spacious */
-          .task-details {
-            margin-top: 1rem;
-            gap: 1rem;
+          .section-header {
+            padding: 16px;
+          }
+          
+          .filter-buttons button {
+            padding: 14px;
+          }
+          
+          .advanced-filters {
+            padding: 14px;
           }
         }
       `}</style>
