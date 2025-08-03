@@ -655,7 +655,7 @@ const App = () => {
   const Modal = () => {
     if (!isModalOpen || !modalContent) return null;
     return createPortal(
-      <div className="fixed inset-0 flex items-center justify-center z-50">
+      <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
         <div 
           className={`absolute inset-0 bg-black backdrop-blur-sm transition-opacity duration-400 ${
             isModalOpen ? 'bg-opacity-60' : 'bg-opacity-0'
@@ -663,14 +663,14 @@ const App = () => {
           onClick={closeModal}
         ></div>
         
-        <div className={`relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-md mx-4 transform transition-all duration-400 ${modalAnimation}`}>
+        <div className={`relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 w-full max-w-md mx-4 transform transition-all duration-400 ${modalAnimation}`}>
           <div className="text-center">
             <div className="mb-6 flex justify-center">
               {modalContent.icon}
             </div>
-            <h3 className="text-2xl font-bold mb-3 text-gray-800 dark:text-white">{modalContent.title}</h3>
-            <p className="text-gray-600 dark:text-gray-300 mb-8 text-lg">{modalContent.message}</p>
-            <div className="flex justify-center space-x-4">
+            <h3 className="text-xl md:text-2xl font-bold mb-3 text-gray-800 dark:text-white">{modalContent.title}</h3>
+            <p className="text-gray-600 dark:text-gray-300 mb-8 text-base md:text-lg">{modalContent.message}</p>
+            <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
               {modalContent.actions.map((action, index) => (
                 <button
                   key={index}
@@ -699,18 +699,18 @@ const App = () => {
       darkMode 
         ? 'bg-gradient-to-br from-gray-900 to-gray-800 text-white' 
         : 'bg-gradient-to-br from-indigo-50 to-purple-100 text-gray-900'
-    } flex items-center justify-center py-10 px-4`}>
+    } flex items-center justify-center py-6 px-4 md:py-10`}>
       <div className={`w-full max-w-md transition-all duration-300 ${
         darkMode 
-          ? 'bg-gray-800 shadow-2xl rounded-2xl p-6' 
-          : 'bg-white shadow-2xl rounded-2xl p-6'
+          ? 'bg-gray-800 shadow-2xl rounded-2xl p-4 md:p-6' 
+          : 'bg-white shadow-2xl rounded-2xl p-4 md:p-6'
       }`}>
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold mb-1 transition-colors duration-300">
+            <h1 className="text-2xl md:text-3xl font-bold mb-1 transition-colors duration-300">
               {darkMode ? 'Todo App' : 'Todo App'}
             </h1>
-            <p className={`text-sm transition-colors duration-300 ${
+            <p className={`text-xs md:text-sm transition-colors duration-300 ${
               darkMode ? 'text-gray-400' : 'text-gray-600'
             }`}>
               Stay organized and productive
@@ -718,7 +718,7 @@ const App = () => {
           </div>
           <button
             onClick={toggleDarkMode}
-            className={`p-3 rounded-full transition-all duration-300 transform hover:scale-110 ${
+            className={`p-2 md:p-3 rounded-full transition-all duration-300 transform hover:scale-110 ${
               darkMode 
                 ? 'bg-yellow-400 text-gray-900' 
                 : 'bg-indigo-600 text-white'
@@ -726,11 +726,11 @@ const App = () => {
             aria-label="Toggle dark mode"
           >
             {darkMode ? (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
               </svg>
             ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
               </svg>
             )}
@@ -1044,8 +1044,8 @@ const App = () => {
                           </svg>
                         )}
                       </button>
-                      <div>
-                        <span className={`font-medium transition-colors duration-300 ${
+                      <div className="flex-1 min-w-0">
+                        <span className={`font-medium transition-colors duration-300 break-words ${
                           todo.completed 
                             ? (darkMode ? 'text-gray-400 line-through' : 'text-gray-400 line-through')
                             : (darkMode ? 'text-white' : 'text-gray-800')
@@ -1063,7 +1063,7 @@ const App = () => {
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
                               </svg>
-                              {formatDate(todo.dueDate)}
+                              <span className="truncate max-w-[120px] sm:max-w-xs">{formatDate(todo.dueDate)}</span>
                               {isOverdue(todo.dueDate) && !todo.completed && (
                                 <span className="ml-1">• Overdue</span>
                               )}
@@ -1082,7 +1082,7 @@ const App = () => {
                       </div>
                     </div>
                     
-                    <div className="flex space-x-2">
+                    <div className="flex space-x-2 flex-shrink-0">
                       <button
                         onClick={() => handleEdit(todo)}
                         className={`p-2 rounded-lg transition-all duration-300 transform hover:scale-110 ${
@@ -1176,6 +1176,45 @@ const App = () => {
           
           input[type="datetime-local"] {
             font-size: 14px;
+          }
+          
+          /* Better touch targets for mobile */
+          button {
+            min-height: 44px;
+          }
+          
+          /* Improve spacing for mobile */
+          .space-y-3 > * + * {
+            margin-top: 0.75rem;
+          }
+          
+          /* Better text overflow handling */
+          .truncate {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+        }
+        
+        /* Small screen improvements */
+        @media (max-width: 480px) {
+          /* Reduce padding on very small screens */
+          .p-4 {
+            padding: 1rem;
+          }
+          
+          /* Adjust font sizes for very small screens */
+          h1 {
+            font-size: 1.5rem;
+          }
+          
+          /* Make buttons full width on small screens */
+          .flex.space-x-3 {
+            gap: 0.5rem;
+          }
+          
+          .flex.space-x-3 button {
+            flex: 1;
           }
         }
       `}</style>
